@@ -19,33 +19,5 @@
         <KEY NAME="submission" TYPE="foreign" FIELDS="submission" REFTABLE="assign_submission" REFFIELDS="id" PREVIOUS="assignment"/>
       </KEYS>
     </TABLE>
-    <TABLE NAME="assignsubmission_word2pdf_tmpl" COMMENT="Stores the data describing a coversheet template" PREVIOUS="assignsubmission_word2pdf" NEXT="assignsubmission_word2pdf_tmplit">
-      <FIELDS>
-        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" NEXT="name"/>
-        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Name that the template is known by" PREVIOUS="id" NEXT="courseid"/>
-        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false" COMMENT="Courseid that this template belongs to (0 for global)" PREVIOUS="name"/>
-      </FIELDS>
-      <KEYS>
-        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-      </KEYS>
-      <INDEXES>
-        <INDEX NAME="courseid" UNIQUE="false" FIELDS="courseid"/>
-      </INDEXES>
-    </TABLE>
-    <TABLE NAME="assignsubmission_word2pdf_tmplit" COMMENT="Default comment for the table, please edit me" PREVIOUS="assignsubmission_word2pdf_tmpl">
-      <FIELDS>
-        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" NEXT="templateid"/>
-        <FIELD NAME="templateid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" PREVIOUS="id" NEXT="type"/>
-        <FIELD NAME="type" TYPE="char" LENGTH="15" NOTNULL="true" DEFAULT="shorttext" SEQUENCE="false" PREVIOUS="templateid" NEXT="xpos"/>
-        <FIELD NAME="xpos" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false" PREVIOUS="type" NEXT="ypos"/>
-        <FIELD NAME="ypos" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="0" SEQUENCE="false" PREVIOUS="xpos" NEXT="width"/>
-        <FIELD NAME="width" TYPE="int" LENGTH="10" NOTNULL="false" DEFAULT="120" SEQUENCE="false" PREVIOUS="ypos" NEXT="setting"/>
-        <FIELD NAME="setting" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" PREVIOUS="width"/>
-      </FIELDS>
-      <KEYS>
-        <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="templateid"/>
-        <KEY NAME="templateid" TYPE="foreign" FIELDS="templateid" REFTABLE="assignsubmission_word2pdf_tmpl" REFFIELDS="id" PREVIOUS="primary"/>
-      </KEYS>
-    </TABLE>
   </TABLES>
 </XMLDB>

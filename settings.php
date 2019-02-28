@@ -34,7 +34,7 @@ if (isset($CFG->maxbytes)) {
 }
 
 $maxfiles = array();
-for ($i=1; $i <= ASSIGNSUBMISSION_WORD2PDF_MAXFILES; $i++) {
+for ($i = 1; $i <= ASSIGNSUBMISSION_WORD2PDF_MAXFILES; $i++) {
     $maxfiles[$i] = $i;
 }
 $settings->add(new admin_setting_configselect('assignsubmission_word2pdf/maxfilesubmissions',

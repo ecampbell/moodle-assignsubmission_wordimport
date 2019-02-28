@@ -15,10 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * This file contains the definition for the library class for pdf
- *  submission plugin
- *
- * This class provides all the functionality for the new assign module.
+ * This file contains the definition for the library class for the Microsoft Word (.docx) file submission plugin.
  *
  * @package   assignsubmission_word2pdf
  * @copyright 2019 Eoin Campbell
@@ -44,12 +41,16 @@ define('ASSIGNSUBMISSION_WORD2PDF_STATUS_EMPTY', 3);
 /**
  * File areas for file submission assignment
  */
-define('ASSIGNSUBMISSION_WORD2PDF_FA_COVERSHEET', 'submission_word2pdf_coversheet'); // Coversheet to attach.
-define('ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT', 'submission_word2pdf_draft'); // Files that have been uploaded but not submitted for marking.
-define('ASSIGNSUBMISSION_WORD2PDF_FA_FINAL', 'submission_word2pdf_final'); // Generated combined PDF (with coversheet).
+define('ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT', 'submission_word2pdf_draft'); // Files uploaded but not submitted for marking.
+define('ASSIGNSUBMISSION_WORD2PDF_FA_FINAL', 'submission_word2pdf_final'); // Generated combined PDF.
 
 define('ASSIGNSUBMISSION_WORD2PDF_FILENAME', 'submission.pdf');
 
+/**
+ * Returns the subplugin information to attach to submission element
+ *
+ * @return backup_subplugin_element
+ */
 function assignsubmission_word2pdf_pluginfile($course, $cm, context $context, $filearea, $args, $forcedownload, $opts) {
     global $DB, $USER;
 

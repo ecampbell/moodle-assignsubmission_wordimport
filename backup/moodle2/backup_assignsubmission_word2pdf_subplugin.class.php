@@ -46,7 +46,7 @@ class backup_assignsubmission_word2pdf_subplugin extends backup_subplugin {
         $subplugin = $this->get_subplugin_element(); // Virtual optigroup element.
         $subpluginwrapper = new backup_nested_element($this->get_recommended_name());
         $subpluginelement = new backup_nested_element('submission_word2pdf', null,
-                                                      array('numpages', 'submission', 'status', 'templatedata'));
+                                                      array('numpages', 'submission', 'status'));
 
         // Backup comments / annotations here, rather than in the 'feedback' backup.
         $comments = new backup_nested_element('pdfcomments');

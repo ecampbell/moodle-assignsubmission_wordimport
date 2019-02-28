@@ -15,10 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * This file contains the definition for the library class for pdf
- *  submission plugin
- *
- * This class provides all the functionality for the new assign module.
+ * This file contains the definition for the library class for the Microsoft Word (.docx) file submission plugin
  *
  * @package   assignsubmission_word2pdf
  * @copyright 2019 Eoin Campbell
@@ -39,10 +36,11 @@ require_once($CFG->dirroot.'/mod/assign/submission/word2pdf/lib.php');
  * @copyright 2019 Eoin Campbell
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class assign_submission_pdf extends assign_submission_plugin {
+class assign_submission_word2pdf extends assign_submission_plugin {
 
     /**
      * Get the name of the file submission plugin
+     *
      * @return string
      */
     public function get_name() {
@@ -53,7 +51,6 @@ class assign_submission_pdf extends assign_submission_plugin {
     /**
      * Get file submission information from the database
      *
-     * @global moodle_database $DB
      * @param int $submissionid
      * @return mixed
      */
@@ -64,8 +61,7 @@ class assign_submission_pdf extends assign_submission_plugin {
 
     /**
      * Get the default setting for file submission plugin
-     * @global stdClass $CFG
-     * @global stdClass $COURSE
+     *
      * @param MoodleQuickForm $mform The form to add elements to
      * @return void
      */
@@ -80,14 +76,10 @@ class assign_submission_pdf extends assign_submission_plugin {
         if ($defaultmaxsubmissionsizebytes === false) {
             $defaultmaxsubmissionsizebytes = get_config('assignsubmission_word2pdf', 'maxbytes');
         }
-        $defaulttemplateid = $this->get_config('templateid');
-        if ($defaulttemplateid === false) {
-            $defaulttemplateid = 0;
-        }
 
         $settings = array();
         $options = array();
-        for ($i = 1; $i<=ASSIGNSUBMISSION_WORD2PDF_MAXFILES; $i++) {
+        for ($i = 1; $i <= ASSIGNSUBMISSION_WORD2PDF_MAXFILES; $i++) {
             $options[$i] = $i;
         }
 
@@ -110,70 +102,17 @@ class assign_submission_pdf extends assign_submission_plugin {
                            get_string('maximumsubmissionsize', 'assignsubmission_file'), $choices);
         $mform->setDefault('assignsubmission_word2pdf_maxsizebytes', $defaultmaxsubmissionsizebytes);
         $mform->disabledIf('assignsubmission_word2pdf_maxsizebytes', 'assignsubmission_word2pdf_enabled', 'eq', 0);
-
-        // Coversheet.
-        $mform->addElement('filemanager', 'assignsubmission_word2pdf_coversheet', get_string('coversheet', 'assignsubmission_word2pdf'), null,
-                           array(
-                                'subdirs' => 0, 'maxbytes' => $COURSE->maxbytes,
-                                'maxfiles' => 1, 'accepted_types' => array('.pdf')
-                           ));
-
-        // Templates.
-        // $templates = array();
-        // $templates[0] = get_string('notemplate', 'assignsubmission_word2pdf');
-        // $templates_data = $DB->get_records_select_menu('assignsubmission_word2pdf_tmpl', 'courseid = 0 OR courseid = ?',
-        //                                                array($COURSE->id), 'name', 'id, name');
-        // foreach ($templates_data as $templateid => $templatename) {
-        //     $templates[$templateid] = $templatename;
-        // }
-        // $mform->addElement('select', 'assignsubmission_word2pdf_templateid',
-        //                    get_string('coversheettemplate', 'assignsubmission_word2pdf'), $templates);
-        // $mform->setDefault('assignsubmission_word2pdf_templateid', $defaulttemplateid);
-
-        // $edittemplateurl = new moodle_url('/mod/assign/submission/word2pdf/edittemplates.php', array('courseid' => $COURSE->id));
-        // $edittemplatelink = html_writer::link($edittemplateurl, get_string('edittemplates', 'assignsubmission_word2pdf'),
-        //                                       array('target' => '_blank'));
-        // $mform->addElement('static', 'assignsubmission_word2pdf_template_edit', '', $edittemplatelink);
     }
 
     /**
-     * Set up the draft file areas before displaying the settings form
-     * @param array $default_values the values to be passed in to the form
-     */
-    public function data_preprocessing(&$default_values) {
-        $context = $this->assignment->get_context();
-        $course = $this->assignment->get_course();
-        $draftitemid = file_get_submitted_draft_itemid('coversheet');
-        if ($context) {
-            // Not needed if the activty has not yet been created.
-            file_prepare_draft_area($draftitemid, $context->id, 'assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_COVERSHEET, 0,
-                                    array(
-                                         'subdirs' => 0, 'maxbytes' => $course->maxbytes,
-                                         'maxfiles' => 1, 'accepted_types' => array('*.pdf')
-                                    ));
-        }
-
-        $default_values['assignsubmission_word2pdf_coversheet'] = $draftitemid;
-    }
-
-    /**
-     * save the settings for file submission plugin
+     * Save the settings for file submission plugin
+     *
      * @param stdClass $data
      * @return bool
      */
     public function save_settings(stdClass $data) {
         $this->set_config('maxfilesubmissions', $data->assignsubmission_word2pdf_maxfiles);
         $this->set_config('maxsubmissionsizebytes', $data->assignsubmission_word2pdf_maxsizebytes);
-        $this->set_config('templateid', $data->assignsubmission_word2pdf_templateid);
-
-        $context = $this->assignment->get_context();
-        $course = $this->assignment->get_course();
-        file_save_draft_area_files($data->assignsubmission_word2pdf_coversheet, $context->id, 'assignsubmission_word2pdf',
-                                   ASSIGNSUBMISSION_WORD2PDF_FA_COVERSHEET, 0,
-                                   array(
-                                        'subdirs' => 0, 'maxbytes' => $course->maxbytes,
-                                        'maxfiles' => 1, 'accepted_types' => array('*.pdf')
-                                   ));
 
         return true;
     }
@@ -213,50 +152,11 @@ class assign_submission_pdf extends assign_submission_plugin {
         $submissionid = $submission ? $submission->id : 0;
 
         $context = $this->assignment->get_context();
-        $fs = get_file_storage();
-        $coversheetfiles = $fs->get_area_files($context->id, 'assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_COVERSHEET,
-                                               false, '', false);
-        if ($coversheetfiles) {
-            $file = reset($coversheetfiles);
-            $fileurl = moodle_url::make_pluginfile_url($file->get_contextid(), $file->get_component(), $file->get_filearea(),
-                                                       null, $file->get_filepath(), $file->get_filename());
-            $filelink = html_writer::link($fileurl, $file->get_filename(), array('target' => '_blank'));
-            $mform->addElement('static', 'pdf_coversheet', '',
-                               get_string('coversheetnotice', 'assignsubmission_word2pdf').': '.$filelink);
-        }
 
         file_prepare_standard_filemanager($data, 'pdfs', $fileoptions, $this->assignment->get_context(),
                                           'assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT, $submissionid);
         $label = html_writer::tag('span', get_string('pdfsubmissions', 'assignsubmission_word2pdf'), array('class' => 'accesshide'));
         $mform->addElement('filemanager', 'pdfs_filemanager', $label, null, $fileoptions);
-
-        if ($coversheetfiles) {
-            if ($templateid = $this->get_config('templateid')) {
-                $templateitems = $DB->get_records('assignsubmission_word2pdf_tmplit', array('templateid' => $templateid));
-                $templatedata = array();
-                if ($submissionid) {
-                    if ($templatedata = $DB->get_field('assignsubmission_word2pdf', 'templatedata',
-                                                       array('submission' => $submissionid))) {
-                        $templatedata = unserialize($templatedata);
-                    }
-                }
-                foreach ($templateitems as $item) {
-                    $elname = "pdf_template[{$item->id}]";
-                    if ($item->type == 'shorttext') {
-                        $mform->addElement('text', $elname, s($item->setting));
-                    } else if ($item->type == 'text') {
-                        $mform->addElement('textarea', $elname, s($item->setting));
-                    } else {
-                        continue;
-                    }
-                    $mform->setType($elname, PARAM_TEXT);
-                    $mform->addRule($elname, null, 'required', null, 'client');
-                    if (isset($templatedata[$item->id])) {
-                        $mform->setDefault($elname, $templatedata[$item->id]);
-                    }
-                }
-            }
-        }
 
         return true;
     }
@@ -279,8 +179,6 @@ class assign_submission_pdf extends assign_submission_plugin {
     /**
      * Save & preprocess the files and trigger plagiarism plugin, if enabled, to scan the uploaded files via events trigger
      *
-     * @global stdClass $USER
-     * @global moodle_database $DB
      * @param stdClass $submission
      * @param stdClass $data
      * @return bool
@@ -320,11 +218,6 @@ class assign_submission_pdf extends assign_submission_plugin {
             return false;
         }
 
-        $templatedata = null;
-        if (isset($data->pdf_template)) {
-            $templatedata = serialize($data->pdf_template);
-        }
-
         $count = $this->count_files($submission->id, ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT);
         // Send files to event system.
         // Let Moodle know that an assessable file was uploaded (eg for plagiarism detection).
@@ -361,14 +254,12 @@ class assign_submission_pdf extends assign_submission_plugin {
 
         if ($pdfsubmission) {
             $pdfsubmission->numpages = 0;
-            $pdfsubmission->templatedata = $templatedata;
             $DB->update_record('assignsubmission_word2pdf', $pdfsubmission);
         } else {
             $pdfsubmission = new stdClass();
             $pdfsubmission->submission = $submission->id;
             $pdfsubmission->assignment = $this->assignment->get_instance()->id;
             $pdfsubmission->numpages = 0;
-            $pdfsubmission->templatedata = $templatedata;
             $DB->insert_record('assignsubmission_word2pdf', $pdfsubmission);
         }
 
@@ -381,51 +272,8 @@ class assign_submission_pdf extends assign_submission_plugin {
     }
 
     /**
-     * If a coversheet template is in use, make sure the student has supplied all
-     * the data required.
-     * @param object $submission
-     * @return bool|string 'true' if all data supplied, message if some data still needed
-     */
-    public function precheck_submission($submission = null) {
-        global $DB, $USER;
-
-        if (is_null($submission)) {
-            if (!empty($this->assignment->get_instance()->teamsubmission)) {
-                $submission = $this->assignment->get_group_submission($USER->id, 0, true);
-            } else {
-                $submission = $this->assignment->get_user_submission($USER->id, true);
-            }
-        }
-        $fs = get_file_storage();
-        $context = $this->assignment->get_context();
-        $coversheetfiles = $fs->get_area_files($context->id, 'assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_COVERSHEET,
-                                               false, '', false);
-
-        $msg = array();
-        if ($coversheetfiles) {
-            if ($templateid = $this->get_config('templateid')) {
-                $templateitems = $DB->get_records('assignsubmission_word2pdf_tmplit', array('templateid' => $templateid));
-                $templatedata = $DB->get_field('assignsubmission_word2pdf', 'templatedata', array('submission' => $submission->id));
-                if (!empty($templatedata)) {
-                    $templatedata = unserialize($templatedata);
-                }
-                foreach ($templateitems as $item) {
-                    if ($item->type != 'date' && !isset($templatedata[$item->id])) {
-                        $msg[] = get_string('missingfield', 'assignsubmission_word2pdf', $item->setting);
-                    }
-                }
-            }
-        }
-
-        if (!empty($msg)) {
-            return implode('<br />', $msg);
-        }
-
-        return true;
-    }
-
-    /**
      * Combine the PDFs together ready for marking
+     *
      * @param stdClass $submission optional details of the submission to process
      * @return void
      */
@@ -475,8 +323,6 @@ class assign_submission_pdf extends assign_submission_plugin {
         $fs = get_file_storage();
 
         $context = $this->assignment->get_context();
-        $coversheet = null;
-        $templateitems = null;
 
         // Create a the required temporary folders.
         $temparea = $this->get_temp_folder($submission->id);
@@ -486,32 +332,6 @@ class assign_submission_pdf extends assign_submission_plugin {
             if (!mkdir($temparea, 0777, true) || !mkdir($tempdestarea, 0777, true)) {
                 $errdata = (object)array('temparea' => $temparea, 'tempdestarea' => $tempdestarea);
                 throw new moodle_exception('errortempfolder', 'assignsubmission_word2pdf', '', null, $errdata);
-            }
-        }
-
-        // Get the coversheet details and copy the file to the temporary folder.
-        $coversheetfiles = $fs->get_area_files($context->id, 'assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_COVERSHEET,
-                                               false, '', false);
-        if ($coversheetfiles) {
-            $coversheetfile = reset($coversheetfiles); // Only ever one coversheet file.
-            $coversheet = $tempdestarea.'/coversheet.pdf';
-            if (!$coversheetfile->copy_content_to($coversheet)) {
-                $errdata = (object)array('coversheet' => $coversheet);
-                throw new moodle_exception('errorcoversheet', 'assignsubmission_word2pdf', '', null, $errdata);
-            }
-            if ($templateid = $this->get_config('templateid')) {
-                $templateitems = $DB->get_records('assignsubmission_word2pdf_tmplit', array('templateid' => $templateid));
-                $templatedata = $DB->get_field('assignsubmission_word2pdf', 'templatedata', array('submission' => $submission->id));
-                if (!empty($templatedata)) {
-                    $templatedata = unserialize($templatedata);
-                }
-                foreach ($templateitems as $item) {
-                    if (isset($templatedata[$item->id])) {
-                        $item->data = $templatedata[$item->id];
-                    } else {
-                        $item->data = '';
-                    }
-                }
             }
         }
 
@@ -527,9 +347,9 @@ class assign_submission_pdf extends assign_submission_plugin {
             $combinefiles[] = $destpath;
         }
 
-        // Combine all the submitted files and the coversheet.
+        // Combine all the submitted files.
         $mypdf = new AssignPDFLib();
-        $pagecount  = $mypdf->combine_pdfs($combinefiles, $destfile, $coversheet, $templateitems);
+        $pagecount  = $mypdf->combine_pdfs($combinefiles, $destfile);
         if (!$pagecount) {
             return 0; // No pages found in the submitted files - this shouldn't happen.
         }
@@ -548,9 +368,6 @@ class assign_submission_pdf extends assign_submission_plugin {
 
         // Clean up all the temporary files.
         unlink($destfile);
-        if ($coversheet) {
-            unlink($coversheet);
-        }
         foreach ($combinefiles as $combinefile) {
             unlink($combinefile);
         }
@@ -587,6 +404,7 @@ class assign_submission_pdf extends assign_submission_plugin {
 
     /**
      * Display the list of files  in the submission status table
+     *
      * @param stdClass $submission
      * @param bool $showviewlink
      * @return string
@@ -621,7 +439,7 @@ class assign_submission_pdf extends assign_submission_plugin {
 
         if ($submission->status == ASSIGN_SUBMISSION_STATUS_DRAFT) {
             $count = $this->count_files($submission->id, ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT);
-            $showviewlink = $count>ASSIGNSUBMISSION_WORD2PDF_MAXSUMMARYFILES;
+            $showviewlink = $count > ASSIGNSUBMISSION_WORD2PDF_MAXSUMMARYFILES;
             if ($showviewlink) {
                 $output .= get_string('countfiles', 'assignsubmission_word2pdf', $count);
             } else {
@@ -631,9 +449,10 @@ class assign_submission_pdf extends assign_submission_plugin {
         } else {
             if (!$this->is_empty($submission)) {
                 $context = $this->assignment->get_context();
-                $url = moodle_url::make_pluginfile_url($context->id, 'assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_FINAL,
-                                                       $submission->id, $this->get_subfolder(), ASSIGNSUBMISSION_WORD2PDF_FILENAME,
-                                                       true);
+                $url = moodle_url::make_pluginfile_url($context->id, 'assignsubmission_word2pdf', 
+                                                       ASSIGNSUBMISSION_WORD2PDF_FA_FINAL,
+                                                       $submission->id, $this->get_subfolder(), 
+                                                       ASSIGNSUBMISSION_WORD2PDF_FILENAME, true);
                 $output .= $OUTPUT->pix_icon('t/download', '');
                 $output .= html_writer::link($url, get_string('finalsubmission', 'assignsubmission_word2pdf'));
             }
@@ -653,52 +472,8 @@ class assign_submission_pdf extends assign_submission_plugin {
     }
 
     /**
-     * Return true if this plugin can upgrade an old Moodle 2.2 assignment of this type
-     * and version.
-     *
-     * @param string $type
-     * @param int $version
-     * @return bool True if upgrade is possible
-     */
-    public function can_upgrade($type, $version) {
-        // TODO davo - upgrade from uploadpdf?
-        return false;
-    }
-
-    /**
-     * Upgrade the settings from the old assignment
-     * to the new plugin based one
-     *
-     * @param context $oldcontext - the old assignment context
-     * @param stdClass $oldassignment - the old assignment data record
-     * @param string $log record log events here
-     * @return bool Was it a success? (false will trigger rollback)
-     */
-    public function upgrade_settings(context $oldcontext, stdClass $oldassignment, & $log) {
-        // TODO davo - upgrade from uploadpdf?
-        return true;
-    }
-
-    /**
-     * Upgrade the submission from the old assignment to the new one
-     *
-     * @global moodle_database $DB
-     * @param context $oldcontext The context of the old assignment
-     * @param stdClass $oldassignment The data record for the old oldassignment
-     * @param stdClass $oldsubmission The data record for the old submission
-     * @param stdClass $submission The data record for the new submission
-     * @param string $log Record upgrade messages in the log
-     * @return bool true or false - false will trigger a rollback
-     */
-    public function upgrade(context $oldcontext, stdClass $oldassignment, stdClass $oldsubmission, stdClass $submission, & $log) {
-        // TODO davo - upgrade from uploadpdf?
-        return true;
-    }
-
-    /**
      * The assignment has been deleted - cleanup
      *
-     * @global moodle_database $DB
      * @return bool
      */
     public function delete_instance() {
@@ -717,8 +492,8 @@ class assign_submission_pdf extends assign_submission_plugin {
 
     /**
      * Formatting for log info
-     * @param stdClass $submission The submission
      *
+     * @param stdClass $submission The submission
      * @return string
      */
     public function format_for_log(stdClass $submission) {
@@ -732,6 +507,9 @@ class assign_submission_pdf extends assign_submission_plugin {
 
     /**
      * Return true if there are no submission files
+     *
+     * @param stdClass $submission The submission
+     * @return bool
      */
     public function is_empty(stdClass $submission) {
         return $this->count_files($submission->id, ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT) == 0;
@@ -739,12 +517,12 @@ class assign_submission_pdf extends assign_submission_plugin {
 
     /**
      * Get file areas returns a list of areas this plugin stores files
+     *
      * @return array - An array of fileareas (keys) and descriptions (values)
      */
     public function get_file_areas() {
         $name = $this->get_name();
         return array(
-            ASSIGNSUBMISSION_WORD2PDF_FA_COVERSHEET => get_string('coversheetfor', 'assignsubmission_word2pdf', $name),
             ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT => get_string('draftfor', 'assignsubmission_word2pdf', $name),
             ASSIGNSUBMISSION_WORD2PDF_FA_FINAL => get_string('finalfor', 'assignsubmission_word2pdf', $name)
         );
@@ -757,6 +535,7 @@ class assign_submission_pdf extends assign_submission_plugin {
     /**
      * Copy the student's submission from a previous submission. Used when a student opts to base their resubmission
      * on the last submission.
+     *
      * @param stdClass $sourcesubmission
      * @param stdClass $destsubmission
      * @return bool

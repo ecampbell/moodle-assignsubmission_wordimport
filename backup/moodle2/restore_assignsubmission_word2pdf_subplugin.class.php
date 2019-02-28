@@ -71,7 +71,6 @@ class restore_assignsubmission_word2pdf_subplugin extends restore_subplugin {
 
         $this->add_related_files('assignsubmission_word2pdf', 'submission_word2pdf_draft', 'submission', null, $oldsubmissionid);
         $this->add_related_files('assignsubmission_word2pdf', 'submission_word2pdf_final', 'submission', null, $oldsubmissionid);
-        $this->add_related_files('assignsubmission_word2pdf', 'submission_word2pdf_coversheet', null);
     }
 
 }
