@@ -31,7 +31,7 @@ require_login();
 require_capability('moodle/course:manageactivities', $context);
 
 $fs = get_file_storage();
-$file = $fs->get_file($context->id, 'assignsubmission_pdf', 'previewimage', 0, '/', 'preview.png');
+$file = $fs->get_file($context->id, 'assignsubmission_word2pdf', 'previewimage', 0, '/', 'preview.png');
 
 if ($file) {
     send_stored_file($file);

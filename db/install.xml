@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/assign/submission/pdf/db" VERSION="20121226" COMMENT="XMLDB file for Moodle mod/assign/submission/pdf"
+<XMLDB PATH="mod/assign/submission/word2pdf/db" VERSION="20121226" COMMENT="XMLDB file for Moodle mod/assign/submission/word2pdf"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../../../lib/xmldb/xmldb.xsd"
 >
   <TABLES>
-    <TABLE NAME="assignsubmission_pdf" COMMENT="Info about submitted assignments" NEXT="assignsubmission_pdf_tmpl">
+    <TABLE NAME="assignsubmission_word2pdf" COMMENT="Info about submitted assignments" NEXT="assignsubmission_word2pdf_tmpl">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" NEXT="assignment"/>
         <FIELD NAME="assignment" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" PREVIOUS="id" NEXT="submission"/>
@@ -19,7 +19,7 @@
         <KEY NAME="submission" TYPE="foreign" FIELDS="submission" REFTABLE="assign_submission" REFFIELDS="id" PREVIOUS="assignment"/>
       </KEYS>
     </TABLE>
-    <TABLE NAME="assignsubmission_pdf_tmpl" COMMENT="Stores the data describing a coversheet template" PREVIOUS="assignsubmission_pdf" NEXT="assignsubmission_pdf_tmplit">
+    <TABLE NAME="assignsubmission_word2pdf_tmpl" COMMENT="Stores the data describing a coversheet template" PREVIOUS="assignsubmission_word2pdf" NEXT="assignsubmission_word2pdf_tmplit">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" NEXT="name"/>
         <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Name that the template is known by" PREVIOUS="id" NEXT="courseid"/>
@@ -32,7 +32,7 @@
         <INDEX NAME="courseid" UNIQUE="false" FIELDS="courseid"/>
       </INDEXES>
     </TABLE>
-    <TABLE NAME="assignsubmission_pdf_tmplit" COMMENT="Default comment for the table, please edit me" PREVIOUS="assignsubmission_pdf_tmpl">
+    <TABLE NAME="assignsubmission_word2pdf_tmplit" COMMENT="Default comment for the table, please edit me" PREVIOUS="assignsubmission_word2pdf_tmpl">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true" NEXT="templateid"/>
         <FIELD NAME="templateid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" PREVIOUS="id" NEXT="type"/>
@@ -44,7 +44,7 @@
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id" NEXT="templateid"/>
-        <KEY NAME="templateid" TYPE="foreign" FIELDS="templateid" REFTABLE="assignsubmission_pdf_tmpl" REFFIELDS="id" PREVIOUS="primary"/>
+        <KEY NAME="templateid" TYPE="foreign" FIELDS="templateid" REFTABLE="assignsubmission_word2pdf_tmpl" REFFIELDS="id" PREVIOUS="primary"/>
       </KEYS>
     </TABLE>
   </TABLES>

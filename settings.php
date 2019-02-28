@@ -17,27 +17,27 @@
 /**
  * This file defines the admin settings for this plugin
  *
- * @package   assignsubmission_pdf
- * @copyright 2012 Davo Smith
+ * @package   assignsubmission_word2pdf
+ * @copyright 2019 Eoin Campbell
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
-require_once($CFG->dirroot.'/mod/assign/submission/pdf/lib.php');
+require_once($CFG->dirroot.'/mod/assign/submission/word2pdf/lib.php');
 
 if (isset($CFG->maxbytes)) {
-    $settings->add(new admin_setting_configselect('assignsubmission_pdf/maxbytes',
+    $settings->add(new admin_setting_configselect('assignsubmission_word2pdf/maxbytes',
                         get_string('maximumsubmissionsize', 'assignsubmission_file'),
                         get_string('configmaxbytes', 'assignsubmission_file'), 1048576, get_max_upload_sizes($CFG->maxbytes)));
 }
 
 $maxfiles = array();
-for ($i=1; $i <= ASSIGNSUBMISSION_PDF_MAXFILES; $i++) {
+for ($i=1; $i <= ASSIGNSUBMISSION_WORD2PDF_MAXFILES; $i++) {
     $maxfiles[$i] = $i;
 }
-$settings->add(new admin_setting_configselect('assignsubmission_pdf/maxfilesubmissions',
-                                               get_string('defaultmaxfilessubmission', 'assignsubmission_pdf'),
-                                               get_string('configmaxfiles', 'assignsubmission_pdf'), 8, $maxfiles));
+$settings->add(new admin_setting_configselect('assignsubmission_word2pdf/maxfilesubmissions',
+                                               get_string('defaultmaxfilessubmission', 'assignsubmission_word2pdf'),
+                                               get_string('configmaxfiles', 'assignsubmission_word2pdf'), 8, $maxfiles));
 

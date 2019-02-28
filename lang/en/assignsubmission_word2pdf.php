@@ -15,11 +15,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Strings for component 'assignsubmission_pdf', language 'en'
+ * Strings for component 'assignsubmission_word2pdf', language 'en'
  *
  * @package   mod_assign
- * @package   assignsubmission_pdf
- * @copyright 2012 Davo Smith
+ * @package   assignsubmission_word2pdf
+ * @copyright 2019 Eoin Campbell
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -30,7 +30,7 @@ $string['cannotedit'] = 'Only site admins can edit global templates';
 $string['chooseitem'] = 'Choose item';
 $string['choosetemplate'] = 'Choose template';
 $string['clicktosetposition'] = 'Click on the image below to set this position';
-$string['configmaxfiles'] = 'The default value for the \'Maximum number of uploaded PDFs\' setting on the assignment configuration page';
+$string['configmaxfiles'] = 'The default value for the \'Maximum number of uploaded Microsoft Word (.docx) files\' setting on the assignment configuration page';
 $string['countfiles'] = '{$a} files';
 $string['courseuploadlimit'] = 'Course upload limit';
 $string['coversheet'] = 'Coversheet to attach';
@@ -39,21 +39,21 @@ $string['coversheetnotice'] = 'The following coversheet will be automatically ad
 $string['coversheettemplate'] = 'Coversheet template';
 $string['coversheetfor'] = 'Coversheet for {$a}';
 $string['dateformatlink'] = 'Date format help';
-$string['defaultmaxfilessubmission'] = 'Default maximum PDFs';
+$string['defaultmaxfilessubmission'] = 'Default maximum Microsoft Word (.docx) files';
 $string['deleteitem'] = 'Delete item';
 $string['deletetemplate'] = 'Delete template';
 $string['draftfor'] = 'Draft files for {$a}';
 $string['duplicatetemplate'] = 'Duplicate template';
-$string['edittemplates'] = 'Edit templates';
+// $string['edittemplates'] = 'Edit templates';
 $string['enabled'] = 'PDF submission';
-$string['enabled_help'] = 'This will allow the submission and automatic combination of PDFs from students. It is designed to be used in conjunction with the PDF annotate feedback type.';
+$string['enabled_help'] = 'This will allow the submission of Microsoft Word (.docx) files from students, and their conversion into PDFs.';
 $string['enterformtext'] = 'Text for submission form';
 $string['errorcopyfile'] = 'Unable to copy the file \'{$a}\' to the temporary folder';
 $string['errorcoversheet'] = 'Unable to copy coversheet to the temporary folder';
 $string['errortempfolder'] = 'Unable to create temporary folder';
 $string['finalfor'] = 'Final submission for {$a}';
 $string['finalsubmission'] = 'Download final submission';
-$string['invalidpdf'] = '\'{$a}\' is not a valid PDF';
+$string['invalidpdf'] = '\'{$a}\' is not a valid Microsoft Word (.docx) file';
 $string['itemdate'] = 'Date';
 $string['itemshorttext'] = 'Short text';
 $string['itemsetting'] = 'Setting';
@@ -64,7 +64,7 @@ $string['itemwidth'] = 'Width';
 $string['itemx'] = 'Position from left';
 $string['itemy'] = 'Position from top';
 $string['maxbytes'] = 'Maximum file size';
-$string['maxfilessubmission'] = 'Maximum number of uploaded PDFs';
+$string['maxfilessubmission'] = 'Maximum number of uploaded Microsoft Word (.docx) files';
 $string['missingfield'] = 'You must fill in the \'{$a}\' field on the submission form.';
 $string['newitem'] = 'New item';
 $string['newtemplate'] = 'New template';

@@ -17,19 +17,19 @@
 /**
  * This file contains the class for restore of this submission plugin
  *
- * @package assignsubmission_pdf
- * @copyright 2012 Davo Smith
+ * @package assignsubmission_word2pdf
+ * @copyright 2019 Eoin Campbell
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 /**
  * restore subplugin class that provides the necessary information needed to restore one assign_submission subplugin.
  *
- * @package assignsubmission_pdf
- * @copyright 2012 Davo Smith
+ * @package assignsubmission_word2pdf
+ * @copyright 2019 Eoin Campbell
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class restore_assignsubmission_pdf_subplugin extends restore_subplugin {
+class restore_assignsubmission_word2pdf_subplugin extends restore_subplugin {
 
     /**
      * Returns the paths to be handled by the subplugin at workshop level
@@ -39,15 +39,15 @@ class restore_assignsubmission_pdf_subplugin extends restore_subplugin {
         $paths = array();
 
         $elename = $this->get_namefor('submission');
-        $elepath = $this->get_pathfor('/submission_pdf'); // We used get_recommended_name() so this works.
+        $elepath = $this->get_pathfor('/submission_word2pdf'); // We used get_recommended_name() so this works.
         $paths[] = new restore_path_element($elename, $elepath);
 
-        $elename = 'assignsubmission_pdf_comment';
-        $elepath = $this->get_pathfor('/submission_pdf/pdfcomments/pdfcomment');
+        $elename = 'assignsubmission_word2pdf_comment';
+        $elepath = $this->get_pathfor('/submission_word2pdf/pdfcomments/pdfcomment');
         $paths[] = new restore_path_element($elename, $elepath);
 
-        $elename = 'assignsubmission_pdf_annotation';
-        $elepath = $this->get_pathfor('/submission_pdf/pdfannotations/pdfannotation');
+        $elename = 'assignsubmission_word2pdf_annotation';
+        $elepath = $this->get_pathfor('/submission_word2pdf/pdfannotations/pdfannotation');
         $paths[] = new restore_path_element($elename, $elepath);
 
         return $paths; // And we return the interesting paths.
@@ -58,7 +58,7 @@ class restore_assignsubmission_pdf_subplugin extends restore_subplugin {
      * @param mixed $data
      * @return void
      */
-    public function process_assignsubmission_pdf_submission($data) {
+    public function process_assignsubmission_word2pdf_submission($data) {
         global $DB;
 
         $data = (object)$data;
@@ -67,31 +67,11 @@ class restore_assignsubmission_pdf_subplugin extends restore_subplugin {
         // The mapping is set in the restore for the core assign activity. When a submission node is processed.
         $data->submission = $this->get_mappingid('submission', $data->submission);
 
-        $DB->insert_record('assignsubmission_pdf', $data);
+        $DB->insert_record('assignsubmission_word2pdf', $data);
 
-        $this->add_related_files('assignsubmission_pdf', 'submission_pdf_draft', 'submission', null, $oldsubmissionid);
-        $this->add_related_files('assignsubmission_pdf', 'submission_pdf_final', 'submission', null, $oldsubmissionid);
-        $this->add_related_files('assignsubmission_pdf', 'submission_pdf_coversheet', null);
-        $this->add_related_files('assignfeedback_pdf', 'feedback_pdf_response', 'submission', null, $oldsubmissionid);
+        $this->add_related_files('assignsubmission_word2pdf', 'submission_word2pdf_draft', 'submission', null, $oldsubmissionid);
+        $this->add_related_files('assignsubmission_word2pdf', 'submission_word2pdf_final', 'submission', null, $oldsubmissionid);
+        $this->add_related_files('assignsubmission_word2pdf', 'submission_word2pdf_coversheet', null);
     }
 
-    public function process_assignsubmission_pdf_comment($data) {
-        global $DB;
-
-        $data = (object)$data;
-        // The mapping is set in the restore for the core assign activity. When a submission node is processed.
-        $data->submissionid = $this->get_mappingid('submission', $data->submissionid);
-
-        $DB->insert_record('assignfeedback_pdf_cmnt', $data);
-    }
-
-    public function process_assignsubmission_pdf_annotation($data) {
-        global $DB;
-
-        $data = (object)$data;
-        // The mapping is set in the restore for the core assign activity. When a submission node is processed.
-        $data->submissionid = $this->get_mappingid('submission', $data->submissionid);
-
-        $DB->insert_record('assignfeedback_pdf_annot', $data);
-    }
 }

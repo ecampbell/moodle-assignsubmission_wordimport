@@ -17,15 +17,14 @@
 /**
  * Version information
  *
- * @package    assignsubmission_pdf
- * @copyright  2012 Davo Smith
+ * @package    assignsubmission_word2pdf
+ * @copyright  2019 Eoin Campbell
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$plugin->version   = 2014022700;
-$plugin->release   = "2.5+ (Build 2014022700)";
-$plugin->requires  = 2013051400;
-$plugin->component = 'assignsubmission_pdf';
-$plugin->maturity  = MATURITY_STABLE;
+$plugin->version   = 2019022800;
+$plugin->release   = "0.1 (Build 2019022800)";
+$plugin->requires  = 2016052300; // Moodle 3.1
+$plugin->component = 'assignsubmission_word2pdf';
+$plugin->maturity  = MATURITY_BETA;
 $plugin->cron      = 0;
-$plugin->dependencies = array('assignfeedback_pdf' => 2013061200);

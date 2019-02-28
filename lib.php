@@ -20,8 +20,8 @@
  *
  * This class provides all the functionality for the new assign module.
  *
- * @package   assignsubmission_pdf
- * @copyright 2012 Davo Smith
+ * @package   assignsubmission_word2pdf
+ * @copyright 2019 Eoin Campbell
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -33,31 +33,31 @@ require_once($CFG->dirroot.'/mod/assign/locallib.php');
 /**
  * General definitions
  */
-define('ASSIGNSUBMISSION_PDF_MAXFILES', 20);
-define('ASSIGNSUBMISSION_PDF_MAXSUMMARYFILES', 5);
+define('ASSIGNSUBMISSION_WORD2PDF_MAXFILES', 20);
+define('ASSIGNSUBMISSION_WORD2PDF_MAXSUMMARYFILES', 5);
 
-define('ASSIGNSUBMISSION_PDF_STATUS_NOTSUBMITTED', 0);
-define('ASSIGNSUBMISSION_PDF_STATUS_SUBMITTED', 1);
-define('ASSIGNSUBMISSION_PDF_STATUS_RESPONDED', 2);
-define('ASSIGNSUBMISSION_PDF_STATUS_EMPTY', 3);
+define('ASSIGNSUBMISSION_WORD2PDF_STATUS_NOTSUBMITTED', 0);
+define('ASSIGNSUBMISSION_WORD2PDF_STATUS_SUBMITTED', 1);
+define('ASSIGNSUBMISSION_WORD2PDF_STATUS_RESPONDED', 2);
+define('ASSIGNSUBMISSION_WORD2PDF_STATUS_EMPTY', 3);
 
 /**
  * File areas for file submission assignment
  */
-define('ASSIGNSUBMISSION_PDF_FA_COVERSHEET', 'submission_pdf_coversheet'); // Coversheet to attach.
-define('ASSIGNSUBMISSION_PDF_FA_DRAFT', 'submission_pdf_draft'); // Files that have been uploaded but not submitted for marking.
-define('ASSIGNSUBMISSION_PDF_FA_FINAL', 'submission_pdf_final'); // Generated combined PDF (with coversheet).
+define('ASSIGNSUBMISSION_WORD2PDF_FA_COVERSHEET', 'submission_word2pdf_coversheet'); // Coversheet to attach.
+define('ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT', 'submission_word2pdf_draft'); // Files that have been uploaded but not submitted for marking.
+define('ASSIGNSUBMISSION_WORD2PDF_FA_FINAL', 'submission_word2pdf_final'); // Generated combined PDF (with coversheet).
 
-define('ASSIGNSUBMISSION_PDF_FILENAME', 'submission.pdf');
+define('ASSIGNSUBMISSION_WORD2PDF_FILENAME', 'submission.pdf');
 
-function assignsubmission_pdf_pluginfile($course, $cm, context $context, $filearea, $args, $forcedownload, $opts) {
+function assignsubmission_word2pdf_pluginfile($course, $cm, context $context, $filearea, $args, $forcedownload, $opts) {
     global $DB, $USER;
 
     if ($context->contextlevel != CONTEXT_MODULE) {
         return false;
     }
 
-    if ($filearea == ASSIGNSUBMISSION_PDF_FA_COVERSHEET) {
+    if ($filearea == ASSIGNSUBMISSION_WORD2PDF_FA_COVERSHEET) {
         // Coversheet.
         if (!has_capability('mod/assign:grade', $context)) {
             require_capability('mod/assign:submit', $context);
@@ -90,12 +90,12 @@ function assignsubmission_pdf_pluginfile($course, $cm, context $context, $filear
         }
 
         $filename = array_pop($args);
-        if ($filearea == ASSIGNSUBMISSION_PDF_FA_DRAFT) {
+        if ($filearea == ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT) {
             if ($submission->status == ASSIGN_SUBMISSION_STATUS_SUBMITTED) {
                 return false; // Already submitted for marking.
             }
-        } else if ($filearea == ASSIGNSUBMISSION_PDF_FA_FINAL) {
-            if ($filename != ASSIGNSUBMISSION_PDF_FILENAME) {
+        } else if ($filearea == ASSIGNSUBMISSION_WORD2PDF_FA_FINAL) {
+            if ($filename != ASSIGNSUBMISSION_WORD2PDF_FILENAME) {
                 return false; // Check filename.
             }
             if ($submission->status != ASSIGN_SUBMISSION_STATUS_SUBMITTED) {
@@ -115,7 +115,7 @@ function assignsubmission_pdf_pluginfile($course, $cm, context $context, $filear
     }
 
     $fs = get_file_storage();
-    $file = $fs->get_file($context->id, 'assignsubmission_pdf', $filearea, $itemid, $filepath, $filename);
+    $file = $fs->get_file($context->id, 'assignsubmission_word2pdf', $filearea, $itemid, $filepath, $filename);
     if ($file) {
         send_stored_file($file, 86400, 0, $forcedownload);
     }
