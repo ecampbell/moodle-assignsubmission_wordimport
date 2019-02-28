@@ -44,7 +44,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
      * @return string
      */
     public function get_name() {
-        return get_string('pdf', 'assignsubmission_word2pdf');
+        return get_string('wordfile', 'assignsubmission_word2pdf');
     }
 
 

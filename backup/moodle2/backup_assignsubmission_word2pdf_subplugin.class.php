@@ -73,7 +73,6 @@ class backup_assignsubmission_word2pdf_subplugin extends backup_subplugin {
 
         $subpluginelement->annotate_files('assignsubmission_word2pdf', 'submission_word2pdf_draft', 'submission');
         $subpluginelement->annotate_files('assignsubmission_word2pdf', 'submission_word2pdf_final', 'submission');
-        $subpluginelement->annotate_files('assignsubmission_word2pdf', 'submission_word2pdf_coversheet', null);
         $subpluginelement->annotate_files('assignfeedback_pdf', 'feedback_pdf_response', 'submission');
         return $subplugin;
     }
