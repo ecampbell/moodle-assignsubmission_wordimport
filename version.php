@@ -24,9 +24,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2019022801;
-$plugin->release   = "0.1.1 (Build 2019022801)";
+$plugin->version   = 2019030101;
+$plugin->release   = "0.1.2 (Build 2019030101)";
 $plugin->requires  = 2016052300; // Moodle 3.1 or higher.
 $plugin->component = 'assignsubmission_word2pdf';
-$plugin->maturity  = MATURITY_BETA;
+$plugin->maturity  = MATURITY_ALPHA;
 $plugin->cron      = 0;

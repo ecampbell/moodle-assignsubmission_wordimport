@@ -1,5 +1,5 @@
 <?php
-// This file is part of the submit PDF plugin for Moodle - http://moodle.org/
+// This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -47,7 +47,6 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         return get_string('wordfile', 'assignsubmission_word2pdf');
     }
 
-
     /**
      * Get file submission information from the database
      *
@@ -60,7 +59,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
     }
 
     /**
-     * Get the default setting for file submission plugin
+     * Get the default setting for Word file conversion plugin
      *
      * @param MoodleQuickForm $mform The form to add elements to
      * @return void
@@ -68,53 +67,8 @@ class assign_submission_word2pdf extends assign_submission_plugin {
     public function get_settings(MoodleQuickForm $mform) {
         global $CFG, $COURSE, $DB;
 
-        $defaultmaxfilesubmissions = $this->get_config('maxfilesubmissions');
-        if ($defaultmaxfilesubmissions === false) {
-            $defaultmaxfilesubmissions = get_config('assignsubmission_word2pdf', 'maxfilesubmissions');
-        }
-        $defaultmaxsubmissionsizebytes = $this->get_config('maxsubmissionsizebytes');
-        if ($defaultmaxsubmissionsizebytes === false) {
-            $defaultmaxsubmissionsizebytes = get_config('assignsubmission_word2pdf', 'maxbytes');
-        }
-
-        $settings = array();
-        $options = array();
-        for ($i = 1; $i <= ASSIGNSUBMISSION_WORD2PDF_MAXFILES; $i++) {
-            $options[$i] = $i;
-        }
-
-        $mform->addElement('select', 'assignsubmission_word2pdf_maxfiles',
-                           get_string('maxfilessubmission', 'assignsubmission_word2pdf'), $options);
-        $mform->setDefault('assignsubmission_word2pdf_maxfiles', $defaultmaxfilesubmissions);
-        $mform->disabledIf('assignsubmission_word2pdf_maxfiles', 'assignsubmission_word2pdf_enabled', 'eq', 0);
-
-        $choices = get_max_upload_sizes($CFG->maxbytes, $COURSE->maxbytes);
-        $choices[0] = get_string('courseuploadlimit', 'assignsubmission_word2pdf').' ('.display_size($COURSE->maxbytes).')';
-        $settings[] = array(
-            'type' => 'select',
-            'name' => 'maxsubmissionsizebytes',
-            'description' => get_string('maximumsubmissionsize', 'assignsubmission_file'),
-            'options' => $choices,
-            'default' => $defaultmaxsubmissionsizebytes
-        );
-
-        $mform->addElement('select', 'assignsubmission_word2pdf_maxsizebytes',
-                           get_string('maximumsubmissionsize', 'assignsubmission_file'), $choices);
-        $mform->setDefault('assignsubmission_word2pdf_maxsizebytes', $defaultmaxsubmissionsizebytes);
-        $mform->disabledIf('assignsubmission_word2pdf_maxsizebytes', 'assignsubmission_word2pdf_enabled', 'eq', 0);
-    }
-
-    /**
-     * Save the settings for file submission plugin
-     *
-     * @param stdClass $data
-     * @return bool
-     */
-    public function save_settings(stdClass $data) {
-        $this->set_config('maxfilesubmissions', $data->assignsubmission_word2pdf_maxfiles);
-        $this->set_config('maxsubmissionsizebytes', $data->assignsubmission_word2pdf_maxsizebytes);
-
-        return true;
+        $enabledbydefault = $this->get_config('assignsubmission_word2pdf_enabled');
+        $mform->addElement('checkbox', 'assignsubmission_word2pdf_enabled', '', $enabledbydefault);
     }
 
     /**
@@ -125,9 +79,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
     private function get_file_options() {
         $fileoptions = array(
             'subdirs' => 0,
-            'maxbytes' => $this->get_config('maxsubmissionsizebytes'),
-            'maxfiles' => $this->get_config('maxfilesubmissions'),
-            'accepted_types' => array('*.pdf'),
+            'accepted_types' => array('*.docx'),
             'return_types' => FILE_INTERNAL
         );
         return $fileoptions;
@@ -153,10 +105,10 @@ class assign_submission_word2pdf extends assign_submission_plugin {
 
         $context = $this->assignment->get_context();
 
-        file_prepare_standard_filemanager($data, 'pdfs', $fileoptions, $this->assignment->get_context(),
+        file_prepare_standard_filemanager($data, 'wordfiles', $fileoptions, $this->assignment->get_context(),
                                           'assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT, $submissionid);
-        $label = html_writer::tag('span', get_string('pdfsubmissions', 'assignsubmission_word2pdf'), array('class' => 'accesshide'));
-        $mform->addElement('filemanager', 'pdfs_filemanager', $label, null, $fileoptions);
+        $label = html_writer::tag('span', get_string('wordfilesubmissions', 'assignsubmission_word2pdf'), array('class' => 'accesshide'));
+        $mform->addElement('filemanager', 'wordfiles_filemanager', $label, null, $fileoptions);
 
         return true;
     }
@@ -189,10 +141,10 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         // Pre-process all files to convert to useful PDF format.
         $fileoptions = $this->get_file_options();
 
-        file_postupdate_standard_filemanager($data, 'pdfs', $fileoptions, $this->assignment->get_context(),
+        file_postupdate_standard_filemanager($data, 'wordfiles', $fileoptions, $this->assignment->get_context(),
                                              'assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT, $submission->id);
 
-        $pdfsubmission = $this->get_word2pdf_submission($submission->id);
+        $wordfilesubmission = $this->get_word2pdf_submission($submission->id);
 
         // Plagiarism code event trigger when files are uploaded.
 
@@ -228,10 +180,6 @@ class assign_submission_word2pdf extends assign_submission_plugin {
             $eventdata->itemid = $submission->id;
             $eventdata->courseid = $this->assignment->get_course()->id;
             $eventdata->userid = $USER->id;
-            if ($count > 1) {
-                $eventdata->files = $files; // This is depreceated - please use pathnamehashes instead!
-            }
-            $eventdata->file = $files; // This is depreceated - please use pathnamehashes instead!
             $eventdata->pathnamehashes = array_keys($files);
             events_trigger('assessable_file_uploaded', $eventdata);
         } else {
@@ -252,15 +200,15 @@ class assign_submission_word2pdf extends assign_submission_plugin {
             $event->trigger();
         }
 
-        if ($pdfsubmission) {
-            $pdfsubmission->numpages = 0;
-            $DB->update_record('assignsubmission_word2pdf', $pdfsubmission);
+        if ($wordfilesubmission) {
+            $wordfilesubmission->numpages = 0;
+            $DB->update_record('assignsubmission_word2pdf', $wordfilesubmission);
         } else {
-            $pdfsubmission = new stdClass();
-            $pdfsubmission->submission = $submission->id;
-            $pdfsubmission->assignment = $this->assignment->get_instance()->id;
-            $pdfsubmission->numpages = 0;
-            $DB->insert_record('assignsubmission_word2pdf', $pdfsubmission);
+            $wordfilesubmission = new stdClass();
+            $wordfilesubmission->submission = $submission->id;
+            $wordfilesubmission->assignment = $this->assignment->get_instance()->id;
+            $wordfilesubmission->numpages = 0;
+            $DB->insert_record('assignsubmission_word2pdf', $wordfilesubmission);
         }
 
         if (!$this->assignment->get_instance()->submissiondrafts) {
@@ -439,13 +387,8 @@ class assign_submission_word2pdf extends assign_submission_plugin {
 
         if ($submission->status == ASSIGN_SUBMISSION_STATUS_DRAFT) {
             $count = $this->count_files($submission->id, ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT);
-            $showviewlink = $count > ASSIGNSUBMISSION_WORD2PDF_MAXSUMMARYFILES;
-            if ($showviewlink) {
-                $output .= get_string('countfiles', 'assignsubmission_word2pdf', $count);
-            } else {
-                $output .= $this->assignment->render_area_files('assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT,
-                                                                $submission->id);
-            }
+            $output .= $this->assignment->render_area_files('assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT,
+                                                            $submission->id);
         } else {
             if (!$this->is_empty($submission)) {
                 $context = $this->assignment->get_context();

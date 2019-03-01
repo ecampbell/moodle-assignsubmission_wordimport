@@ -1,5 +1,5 @@
 <?php
-// This file is part of the submit PDF plugin for Moodle - http://moodle.org/
+// This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * This file contains the definition for the library class for the Microsoft Word (.docx) file submission plugin.
+ * Definition of the library class for the Microsoft Word (.docx) file conversion plugin.
  *
  * @package   assignsubmission_word2pdf
  * @copyright 2019 Eoin Campbell
@@ -30,8 +30,6 @@ require_once($CFG->dirroot.'/mod/assign/locallib.php');
 /**
  * General definitions
  */
-define('ASSIGNSUBMISSION_WORD2PDF_MAXFILES', 20);
-define('ASSIGNSUBMISSION_WORD2PDF_MAXSUMMARYFILES', 5);
 
 define('ASSIGNSUBMISSION_WORD2PDF_STATUS_NOTSUBMITTED', 0);
 define('ASSIGNSUBMISSION_WORD2PDF_STATUS_SUBMITTED', 1);
@@ -58,56 +56,46 @@ function assignsubmission_word2pdf_pluginfile($course, $cm, context $context, $f
         return false;
     }
 
-    if ($filearea == ASSIGNSUBMISSION_WORD2PDF_FA_COVERSHEET) {
-        // Coversheet.
-        if (!has_capability('mod/assign:grade', $context)) {
-            require_capability('mod/assign:submit', $context);
-        }
 
-        $itemid = 0;
-        $filename = array_pop($args);
+    // Submission file.
+    $submissionid = array_shift($args);
+    $submission = $DB->get_record('assign_submission', array('id' => $submissionid));
 
-    } else {
-        // Submission file.
-        $submissionid = array_shift($args);
-        $submission = $DB->get_record('assign_submission', array('id' => $submissionid));
-
-        if ($submission->assignment != $cm->instance) {
-            return false; // Submission does not belong to this assignment.
-        }
-
-        if (!has_capability('mod/assign:grade', $context)) { // Graders can see all files.
-            if (!has_capability('mod/assign:submit', $context)) {
-                return false; // Cannot grade or submit => cannot see any files.
-            }
-            // Can submit, but not grade => see if this file belongs to the user or their group.
-            if ($submission->groupid) {
-                if (!groups_is_member($submission->groupid)) {
-                    return false; // Group submission for a group the user doesn't belong to.
-                }
-            } else if ($USER->id != $submission->userid) {
-                return false; // Individual submission for another user.
-            }
-        }
-
-        $filename = array_pop($args);
-        if ($filearea == ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT) {
-            if ($submission->status == ASSIGN_SUBMISSION_STATUS_SUBMITTED) {
-                return false; // Already submitted for marking.
-            }
-        } else if ($filearea == ASSIGNSUBMISSION_WORD2PDF_FA_FINAL) {
-            if ($filename != ASSIGNSUBMISSION_WORD2PDF_FILENAME) {
-                return false; // Check filename.
-            }
-            if ($submission->status != ASSIGN_SUBMISSION_STATUS_SUBMITTED) {
-                return false; // Not submitted for marking.
-            }
-        } else {
-            return false;
-        }
-
-        $itemid = $submission->id;
+    if ($submission->assignment != $cm->instance) {
+        return false; // Submission does not belong to this assignment.
     }
+
+    if (!has_capability('mod/assign:grade', $context)) { // Graders can see all files.
+        if (!has_capability('mod/assign:submit', $context)) {
+            return false; // Cannot grade or submit => cannot see any files.
+        }
+        // Can submit, but not grade => see if this file belongs to the user or their group.
+        if ($submission->groupid) {
+            if (!groups_is_member($submission->groupid)) {
+                return false; // Group submission for a group the user doesn't belong to.
+            }
+        } else if ($USER->id != $submission->userid) {
+            return false; // Individual submission for another user.
+        }
+    }
+
+    $filename = array_pop($args);
+    if ($filearea == ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT) {
+        if ($submission->status == ASSIGN_SUBMISSION_STATUS_SUBMITTED) {
+            return false; // Already submitted for marking.
+        }
+    } else if ($filearea == ASSIGNSUBMISSION_WORD2PDF_FA_FINAL) {
+        if ($filename != ASSIGNSUBMISSION_WORD2PDF_FILENAME) {
+            return false; // Check filename.
+        }
+        if ($submission->status != ASSIGN_SUBMISSION_STATUS_SUBMITTED) {
+            return false; // Not submitted for marking.
+        }
+    } else {
+        return false;
+    }
+
+    $itemid = $submission->id;
 
     if (empty($args)) {
         $filepath = '/';

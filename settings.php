@@ -24,20 +24,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-global $CFG;
-require_once($CFG->dirroot.'/mod/assign/submission/word2pdf/lib.php');
-
-if (isset($CFG->maxbytes)) {
-    $settings->add(new admin_setting_configselect('assignsubmission_word2pdf/maxbytes',
-                        get_string('maximumsubmissionsize', 'assignsubmission_file'),
-                        get_string('configmaxbytes', 'assignsubmission_file'), 1048576, get_max_upload_sizes($CFG->maxbytes)));
-}
-
-$maxfiles = array();
-for ($i = 1; $i <= ASSIGNSUBMISSION_WORD2PDF_MAXFILES; $i++) {
-    $maxfiles[$i] = $i;
-}
-$settings->add(new admin_setting_configselect('assignsubmission_word2pdf/maxfilesubmissions',
-                                               get_string('defaultmaxfilessubmission', 'assignsubmission_word2pdf'),
-                                               get_string('configmaxfiles', 'assignsubmission_word2pdf'), 8, $maxfiles));
-
+// Note: This is on by default.
+$settings->add(new admin_setting_configcheckbox('assign/enabledbydefault',
+                    new lang_string('default', 'assignsubmission_word2pdf'),
+                    new lang_string('default_help', 'assignsubmission_word2pdf'),
+                    1));
