@@ -29,9 +29,6 @@ defined('MOODLE_INTERNAL') || die();
  *
  * This just adds its filearea to the annotations and records the number of files
  *
- * @package assignsubmission_word2pdf
- * @copyright 2019 Eoin Campbell
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class backup_assignsubmission_word2pdf_subplugin extends backup_subplugin {
 

@@ -17,7 +17,6 @@
 /**
  * Strings for component 'assignsubmission_word2pdf', language 'en'
  *
- * @package   mod_assign
  * @package   assignsubmission_word2pdf
  * @copyright 2019 Eoin Campbell
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -34,7 +33,7 @@ $string['finalfor'] = 'Final submission for {$a}';
 $string['default'] = 'Enabled by default';
 $string['default_help'] = 'If set, this submission method will be enabled by default for all new assignments.';
 $string['enabled'] = 'Convert Microsoft Word (.docx) files to PDF';
-$string['enabled_help'] = 'If enabled, Microsoft Word file submissions will be converted into PDF format.';
+$string['enabled_help'] = 'If enabled, Microsoft Word file submissions will be converted into PDF format and stored for viewing in the online grading interface.';
 $string['invalidwordfile'] = '\'{$a}\' is not a valid Microsoft Word (.docx) file';
 $string['pluginname'] = 'Microsoft Word (.docx) file to PDF conversion';
-$string['wordfile'] = 'Microsoft Word (.docx) file to PDF conversion';
+$string['word2pdf'] = 'Convert Microsoft Word (.docx) files to PDF';

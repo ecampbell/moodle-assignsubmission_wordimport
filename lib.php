@@ -47,15 +47,20 @@ define('ASSIGNSUBMISSION_WORD2PDF_FILENAME', 'submission.pdf');
 /**
  * Returns the subplugin information to attach to submission element
  *
+ * @param  stdClass $course Course object.
+ * @param  stdClass $cm Course module object.
+ * @param context $context context of the assignment.
+ * @param string $filearea
+ * @param array $args
+ * @param bool $forcedownload
  * @return backup_subplugin_element
  */
-function assignsubmission_word2pdf_pluginfile($course, $cm, context $context, $filearea, $args, $forcedownload, $opts) {
+function assignsubmission_word2pdf_pluginfile($course, $cm, context $context, $filearea, $args, $forcedownload) {
     global $DB, $USER;
 
     if ($context->contextlevel != CONTEXT_MODULE) {
         return false;
     }
-
 
     // Submission file.
     $submissionid = array_shift($args);

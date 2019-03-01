@@ -16,6 +16,7 @@
 
 /**
  * This file contains the definition for the library class for the Microsoft Word (.docx) file submission plugin
+ * Originally written by Davo Smith (assignsubmission_pdf).
  *
  * @package   assignsubmission_word2pdf
  * @copyright 2019 Eoin Campbell
@@ -28,13 +29,7 @@ global $CFG;
 require_once($CFG->dirroot.'/mod/assign/submission/word2pdf/lib.php');
 
 /*
- * Library class for file submission plugin extending submission plugin base class.
- * Originally written by Davo Smith (assignsubmission_pdf).
- *
- * @package   mod_assign
- * @subpackage submission_word2pdf
- * @copyright 2019 Eoin Campbell
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * Library class for Microsoft Word file to PDF conversion.
  */
 class assign_submission_word2pdf extends assign_submission_plugin {
 
@@ -44,7 +39,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
      * @return string
      */
     public function get_name() {
-        return get_string('wordfile', 'assignsubmission_word2pdf');
+        return get_string('word2pdf', 'assignsubmission_word2pdf');
     }
 
     /**
@@ -107,7 +102,8 @@ class assign_submission_word2pdf extends assign_submission_plugin {
 
         file_prepare_standard_filemanager($data, 'wordfiles', $fileoptions, $this->assignment->get_context(),
                                           'assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT, $submissionid);
-        $label = html_writer::tag('span', get_string('wordfilesubmissions', 'assignsubmission_word2pdf'), array('class' => 'accesshide'));
+        $label = html_writer::tag('span', get_string('wordfilesubmissions', 'assignsubmission_word2pdf'),
+                                  array('class' => 'accesshide'));
         $mform->addElement('filemanager', 'wordfiles_filemanager', $label, null, $fileoptions);
 
         return true;
@@ -392,9 +388,9 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         } else {
             if (!$this->is_empty($submission)) {
                 $context = $this->assignment->get_context();
-                $url = moodle_url::make_pluginfile_url($context->id, 'assignsubmission_word2pdf', 
+                $url = moodle_url::make_pluginfile_url($context->id, 'assignsubmission_word2pdf',
                                                        ASSIGNSUBMISSION_WORD2PDF_FA_FINAL,
-                                                       $submission->id, $this->get_subfolder(), 
+                                                       $submission->id, $this->get_subfolder(),
                                                        ASSIGNSUBMISSION_WORD2PDF_FILENAME, true);
                 $output .= $OUTPUT->pix_icon('t/download', '');
                 $output .= html_writer::link($url, get_string('finalsubmission', 'assignsubmission_word2pdf'));
@@ -411,7 +407,8 @@ class assign_submission_word2pdf extends assign_submission_plugin {
      * @return string
      */
     public function view(stdClass $submission) {
-        return $this->assignment->render_area_files('assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT, $submission->id);
+        return $this->assignment->render_area_files('assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT,
+                                                    $submission->id);
     }
 
     /**
