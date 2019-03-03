@@ -37,3 +37,5 @@ $string['enabled_help'] = 'If enabled, Microsoft Word file submissions will be c
 $string['invalidwordfile'] = '\'{$a}\' is not a valid Microsoft Word (.docx) file';
 $string['pluginname'] = 'Microsoft Word (.docx) file to PDF conversion';
 $string['word2pdf'] = 'Convert Microsoft Word (.docx) files to PDF';
+$string['wordfilesubmissions'] = 'Word file submissions';
+

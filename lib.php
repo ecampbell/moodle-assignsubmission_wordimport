@@ -47,8 +47,8 @@ define('ASSIGNSUBMISSION_WORD2PDF_FILENAME', 'submission.pdf');
 /**
  * Returns the subplugin information to attach to submission element
  *
- * @param  stdClass $course Course object.
- * @param  stdClass $cm Course module object.
+ * @param stdClass $course Course object.
+ * @param stdClass $cm Course module object.
  * @param context $context context of the assignment.
  * @param string $filearea
  * @param array $args

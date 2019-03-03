@@ -26,7 +26,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
-require_once($CFG->dirroot.'/mod/assign/submission/word2pdf/lib.php');
+require_once($CFG->libdir . '/pdflib.php');
+require_once($CFG->libdir . '/tcpdf/tcpdf.php');
 
 /*
  * Library class for Microsoft Word file to PDF conversion.
