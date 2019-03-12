@@ -28,6 +28,7 @@ defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once($CFG->libdir . '/pdflib.php');
 require_once($CFG->libdir . '/tcpdf/tcpdf.php');
+require_once($CFG->dirroot.'/mod/assign/feedback/editpdf/fpdi/fpdi.php');
 
 /*
  * Library class for Microsoft Word file to PDF conversion.
@@ -65,6 +66,8 @@ class assign_submission_word2pdf extends assign_submission_plugin {
 
         $enabledbydefault = $this->get_config('assignsubmission_word2pdf_enabled');
         $mform->addElement('checkbox', 'assignsubmission_word2pdf_enabled', '', $enabledbydefault);
+        // $mform->setDefault('assignsubmission_word2pdf_enabled', $defaultmaxfilesubmissions);
+        $mform->disabledIf('assignsubmission_word2pdf_enabled', 'assignsubmission_file_enabled', 'eq', 0);
     }
 
     /**
@@ -88,7 +91,6 @@ class assign_submission_word2pdf extends assign_submission_plugin {
      * @param MoodleQuickForm $mform
      * @param stdClass $data
      * @return bool
-     */
     public function get_form_elements($submission, MoodleQuickForm $mform, stdClass $data) {
         global $DB;
 
@@ -109,6 +111,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
 
         return true;
     }
+     */
 
     /**
      * Count the number of files
@@ -150,6 +153,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
                                      ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT, $submission->id, "id", false);
         // Check all files are PDF v1.4 or less.
         $submissionok = true;
+        /*
         foreach ($files as $key => $file) {
             if (!AssignPDFLib::ensure_pdf_compatible($file)) {
                 $filename = $file->get_filename();
@@ -162,6 +166,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
                 $submissionok = false;
             }
         }
+        */
 
         if (!$submissionok) {
             return false;
@@ -293,6 +298,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         }
 
         // Combine all the submitted files.
+        /*
         $mypdf = new AssignPDFLib();
         $pagecount  = $mypdf->combine_pdfs($combinefiles, $destfile);
         if (!$pagecount) {
@@ -318,6 +324,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         }
         @rmdir($tempdestarea);
         @rmdir($temparea);
+        */
 
         return $pagecount;
     }
