@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 // Note: This is on by default.
-$settings->add(new admin_setting_configcheckbox('assign/enabledbydefault',
+$settings->add(new admin_setting_configcheckbox('assignsubmission_word2pdf/default',
                     new lang_string('default', 'assignsubmission_word2pdf'),
                     new lang_string('default_help', 'assignsubmission_word2pdf'),
                     1));

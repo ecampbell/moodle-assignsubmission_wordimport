@@ -45,32 +45,6 @@ class assign_submission_word2pdf extends assign_submission_plugin {
     }
 
     /**
-     * Get file submission information from the database
-     *
-     * @param int $submissionid
-     * @return mixed
-     */
-    private function get_word2pdf_submission($submissionid) {
-        global $DB;
-        return $DB->get_record('assignsubmission_word2pdf', array('submission' => $submissionid));
-    }
-
-    /**
-     * Get the default setting for Word file conversion plugin
-     *
-     * @param MoodleQuickForm $mform The form to add elements to
-     * @return void
-     */
-    public function get_settings(MoodleQuickForm $mform) {
-        global $CFG, $COURSE, $DB;
-
-        $enabledbydefault = $this->get_config('assignsubmission_word2pdf_enabled');
-        $mform->addElement('checkbox', 'assignsubmission_word2pdf_enabled', '', $enabledbydefault);
-        // $mform->setDefault('assignsubmission_word2pdf_enabled', $defaultmaxfilesubmissions);
-        $mform->disabledIf('assignsubmission_word2pdf_enabled', 'assignsubmission_file_enabled', 'eq', 0);
-    }
-
-    /**
      * File format options
      *
      * @return array
@@ -85,35 +59,6 @@ class assign_submission_word2pdf extends assign_submission_plugin {
     }
 
     /**
-     * Add elements to submission form
-     *
-     * @param mixed $submission stdClass|null
-     * @param MoodleQuickForm $mform
-     * @param stdClass $data
-     * @return bool
-    public function get_form_elements($submission, MoodleQuickForm $mform, stdClass $data) {
-        global $DB;
-
-        if ($this->get_config('maxfilesubmissions') <= 0) {
-            return false;
-        }
-
-        $fileoptions = $this->get_file_options();
-        $submissionid = $submission ? $submission->id : 0;
-
-        $context = $this->assignment->get_context();
-
-        file_prepare_standard_filemanager($data, 'wordfiles', $fileoptions, $this->assignment->get_context(),
-                                          'assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT, $submissionid);
-        $label = html_writer::tag('span', get_string('wordfilesubmissions', 'assignsubmission_word2pdf'),
-                                  array('class' => 'accesshide'));
-        $mform->addElement('filemanager', 'wordfiles_filemanager', $label, null, $fileoptions);
-
-        return true;
-    }
-     */
-
-    /**
      * Count the number of files
      *
      * @param int $submissionid
@@ -122,7 +67,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
      */
     private function count_files($submissionid, $area) {
         $fs = get_file_storage();
-        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_word2pdf',
+        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_file',
                                      $area, $submissionid, "id", false);
 
         return count($files);
@@ -142,14 +87,14 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         $fileoptions = $this->get_file_options();
 
         file_postupdate_standard_filemanager($data, 'wordfiles', $fileoptions, $this->assignment->get_context(),
-                                             'assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT, $submission->id);
+                                             'assignsubmission_file', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT, $submission->id);
 
-        $wordfilesubmission = $this->get_word2pdf_submission($submission->id);
+        $wordfilesubmission = $this->get_file_submission($submission->id);
 
         // Plagiarism code event trigger when files are uploaded.
 
         $fs = get_file_storage();
-        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_word2pdf',
+        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_file',
                                      ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT, $submission->id, "id", false);
         // Check all files are PDF v1.4 or less.
         $submissionok = true;
@@ -506,7 +451,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         }
 
         // Copy the assignsubmission_file record.
-        if ($filesubmission = $this->get_word2pdf_submission($sourcesubmission->id)) {
+        if ($filesubmission = $this->get_file_submission($sourcesubmission->id)) {
             unset($filesubmission->id);
             $filesubmission->submission = $destsubmission->id;
             $DB->insert_record('assignsubmission_file', $filesubmission);
