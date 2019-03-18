@@ -36,6 +36,7 @@ $string['enabled'] = 'Convert Microsoft Word (.docx) files to PDF';
 $string['enabled_help'] = 'If enabled, Microsoft Word file submissions will be converted into PDF format and stored for viewing in the online grading interface.';
 $string['invalidwordfile'] = '\'{$a}\' is not a valid Microsoft Word (.docx) file';
 $string['pluginname'] = 'Microsoft Word (.docx) file to PDF conversion';
+$string['privacy:metadata']      = 'The Microsoft Word file to PDF conversion plugin for assignment submissions does not store personal data.';
 $string['word2pdf'] = 'Convert Microsoft Word (.docx) files to PDF';
 $string['wordfilesubmissions'] = 'Word file submissions';
 
