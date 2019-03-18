@@ -28,7 +28,8 @@ defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once($CFG->libdir . '/pdflib.php');
 require_once($CFG->libdir . '/tcpdf/tcpdf.php');
-require_once($CFG->dirroot.'/mod/assign/feedback/editpdf/fpdi/fpdi.php');
+require_once($CFG->dirroot . '/mod/assign/submission/word2pdf/lib.php');
+require_once($CFG->dirroot . '/mod/assign/feedback/editpdf/fpdi/fpdi.php');
 
 /*
  * Library class for Microsoft Word file to PDF conversion.
@@ -42,6 +43,17 @@ class assign_submission_word2pdf extends assign_submission_plugin {
      */
     public function get_name() {
         return get_string('word2pdf', 'assignsubmission_word2pdf');
+    }
+
+    /**
+     * Get file submission information from the database
+     *
+     * @param int $submissionid
+     * @return mixed
+     */
+    private function get_word2pdf_submission($submissionid) {
+        global $DB;
+        return $DB->get_record('assignsubmission_word2pdf', array('submission' => $submissionid));
     }
 
     /**
@@ -59,7 +71,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
     }
 
     /**
-     * Count the number of files
+     * Count the number of Word files
      *
      * @param int $submissionid
      * @param string $area
@@ -67,14 +79,14 @@ class assign_submission_word2pdf extends assign_submission_plugin {
      */
     private function count_files($submissionid, $area) {
         $fs = get_file_storage();
-        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_file',
+        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_word2pdf',
                                      $area, $submissionid, "id", false);
 
         return count($files);
     }
 
     /**
-     * Save & preprocess the files and trigger plagiarism plugin, if enabled, to scan the uploaded files via events trigger
+     * Save & convert the Word files to PDFs, and trigger plagiarism plugin if enabled
      *
      * @param stdClass $submission
      * @param stdClass $data
@@ -83,82 +95,37 @@ class assign_submission_word2pdf extends assign_submission_plugin {
     public function save(stdClass $submission, stdClass $data) {
         global $USER, $DB, $SESSION, $CFG;
 
-        // Pre-process all files to convert to useful PDF format.
+        // Make a list of Word files to convert to PDF format.
         $fileoptions = $this->get_file_options();
-
         file_postupdate_standard_filemanager($data, 'wordfiles', $fileoptions, $this->assignment->get_context(),
-                                             'assignsubmission_file', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT, $submission->id);
-
-        $wordfilesubmission = $this->get_file_submission($submission->id);
+                                             'assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT, $submission->id);
 
         // Plagiarism code event trigger when files are uploaded.
-
         $fs = get_file_storage();
-        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_file',
+        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_word2pdf',
                                      ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT, $submission->id, "id", false);
-        // Check all files are PDF v1.4 or less.
-        $submissionok = true;
-        /*
-        foreach ($files as $key => $file) {
-            if (!AssignPDFLib::ensure_pdf_compatible($file)) {
-                $filename = $file->get_filename();
-                $file->delete();
-                unset($files[$key]);
-                if (!isset($SESSION->assignsubmission_word2pdf_invalid)) {
-                    $SESSION->assignsubmission_word2pdf_invalid = array();
-                }
-                $SESSION->assignsubmission_word2pdf_invalid[] = $filename;
-                $submissionok = false;
-            }
-        }
-        */
-
-        if (!$submissionok) {
-            return false;
-        }
 
         $count = $this->count_files($submission->id, ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT);
         // Send files to event system.
         // Let Moodle know that an assessable file was uploaded (eg for plagiarism detection).
-        if ($CFG->branch < 26) {
-            $eventdata = new stdClass();
-            $eventdata->modulename = 'assign';
-            $eventdata->cmid = $this->assignment->get_course_module()->id;
-            $eventdata->itemid = $submission->id;
-            $eventdata->courseid = $this->assignment->get_course()->id;
-            $eventdata->userid = $USER->id;
-            $eventdata->pathnamehashes = array_keys($files);
-            events_trigger('assessable_file_uploaded', $eventdata);
-        } else {
-            $params = array(
-                'context' => context_module::instance($this->assignment->get_course_module()->id),
-                'courseid' => $this->assignment->get_course()->id,
-                'objectid' => $submission->id,
-                'other' => array(
-                    'content' => '',
-                    'pathnamehashes' => array_keys($files)
-                )
-            );
-            if (!empty($submission->userid) && ($submission->userid != $USER->id)) {
-                $params['relateduserid'] = $submission->userid;
-            }
-            $event = \assignsubmission_file\event\assessable_uploaded::create($params);
-            $event->set_legacy_files($files);
-            $event->trigger();
+        $params = array(
+            'context' => context_module::instance($this->assignment->get_course_module()->id),
+            'courseid' => $this->assignment->get_course()->id,
+            'objectid' => $submission->id,
+            'other' => array(
+                'content' => '',
+                'pathnamehashes' => array_keys($files)
+            )
+        );
+        if (!empty($submission->userid) && ($submission->userid != $USER->id)) {
+            $params['relateduserid'] = $submission->userid;
         }
+        $event = \assignsubmission_file\event\assessable_uploaded::create($params);
+        $event->set_legacy_files($files);
+        $event->trigger();
 
-        if ($wordfilesubmission) {
-            $wordfilesubmission->numpages = 0;
-            $DB->update_record('assignsubmission_word2pdf', $wordfilesubmission);
-        } else {
-            $wordfilesubmission = new stdClass();
-            $wordfilesubmission->submission = $submission->id;
-            $wordfilesubmission->assignment = $this->assignment->get_instance()->id;
-            $wordfilesubmission->numpages = 0;
-            $DB->insert_record('assignsubmission_word2pdf', $wordfilesubmission);
-        }
-
-        if (!$this->assignment->get_instance()->submissiondrafts) {
+        $wordfilesubmission = $this->get_word2pdf_submission($submission->id);
+        if ($wordfilesubmission && !$this->assignment->get_instance()->submissiondrafts) {
             // No 'submit assignment' button - need to submit immediately.
             $this->submit_for_grading($submission);
         }
@@ -167,7 +134,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
     }
 
     /**
-     * Combine the PDFs together ready for marking
+     * Convert the Word files into PDFs
      *
      * @param stdClass $submission optional details of the submission to process
      * @return void
@@ -204,25 +171,32 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         }
     }
 
+    /**
+     * Create a temporary working folder
+     *
+     * @param int $submissionid Submission ID
+     * @return string
+     */
     protected function get_temp_folder($submissionid) {
         global $CFG, $USER;
 
-        $tempfolder = $CFG->dataroot.'/temp/assignsubmission_word2pdf/';
-        $tempfolder .= sha1("{$submissionid}_{$USER->id}_".time());
+        $tempfolder = $CFG->dataroot . '/temp/assignsubmission_word2pdf/';
+        $tempfolder .= sha1("{$submissionid}_{$USER->id}_" . time());
         return $tempfolder;
     }
 
+    /**
+     * Convert each of the Word files into HTML, and then create a PDF
+     *
+     * @param stdClass $submission Details of the submission to process
+     * @return int Number of pages
+     */
     protected function create_submission_pdf(stdClass $submission) {
-        global $DB;
 
-        $fs = get_file_storage();
-
-        $context = $this->assignment->get_context();
-
-        // Create a the required temporary folders.
+        // Create the required temporary folders.
         $temparea = $this->get_temp_folder($submission->id);
-        $tempdestarea = $temparea.'sub';
-        $destfile = $tempdestarea.'/'.ASSIGNSUBMISSION_WORD2PDF_FILENAME;
+        $tempdestarea = $temparea . 'sub';
+        $destfile = $tempdestarea . '/' . ASSIGNSUBMISSION_WORD2PDF_FILENAME;
         if (!file_exists($temparea) || !file_exists($tempdestarea)) {
             if (!mkdir($temparea, 0777, true) || !mkdir($tempdestarea, 0777, true)) {
                 $errdata = (object)array('temparea' => $temparea, 'tempdestarea' => $tempdestarea);
@@ -230,27 +204,25 @@ class assign_submission_word2pdf extends assign_submission_plugin {
             }
         }
 
-        // Copy all the PDFs to the temporary folder.
+        // Get the Word files submitted.
+        $context = $this->assignment->get_context();
+        $fs = get_file_storage();
         $files = $fs->get_area_files($context->id, 'assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT,
                                      $submission->id, "sortorder, id", false);
-        $combinefiles = array();
+        $combinedhtml = "";
         foreach ($files as $file) {
-            $destpath = $temparea.'/'.$file->get_contenthash();
-            if (!$file->copy_content_to($destpath)) {
-                throw new moodle_exception('errorcopyfile', 'assignsubmission_word2pdf', '', $file->get_filename());
-            }
-            $combinefiles[] = $destpath;
+            $combinedhtml .= assignsubmission_word2pdf_convert_to_xhtml($file->get_filename(), $context->id, $submission->id);
         }
 
-        // Combine all the submitted files.
-        /*
-        $mypdf = new AssignPDFLib();
-        $pagecount  = $mypdf->combine_pdfs($combinefiles, $destfile);
+        // Create a single PDF file from the merged HTML content.
+        $mypdf = new TCPDF();
+        $mypdf->writeHTML($html);
+        $pagecount  = $mypdf->getNumPages();
         if (!$pagecount) {
-            return 0; // No pages found in the submitted files - this shouldn't happen.
+            return 0; // No pages converted file - this shouldn't happen.
         }
 
-        // Copy the combined file into the submission area.
+        // Copy the combined file into the submission area, deleting any previous version first.
         $fs->delete_area_files($context->id, 'assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_FINAL, $submission->id);
         $fileinfo = array(
             'contextid' => $context->id,
@@ -261,15 +233,6 @@ class assign_submission_word2pdf extends assign_submission_plugin {
             'filepath' => $this->get_subfolder()
         );
         $fs->create_file_from_pathname($fileinfo, $destfile);
-
-        // Clean up all the temporary files.
-        unlink($destfile);
-        foreach ($combinefiles as $combinefile) {
-            unlink($combinefile);
-        }
-        @rmdir($tempdestarea);
-        @rmdir($temparea);
-        */
 
         return $pagecount;
     }
@@ -451,10 +414,10 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         }
 
         // Copy the assignsubmission_file record.
-        if ($filesubmission = $this->get_file_submission($sourcesubmission->id)) {
-            unset($filesubmission->id);
-            $filesubmission->submission = $destsubmission->id;
-            $DB->insert_record('assignsubmission_file', $filesubmission);
+        if ($wordfilesubmission = $this->get_word2pdf_submission($sourcesubmission->id)) {
+            unset($wordfilesubmission->id);
+            $wordfilesubmission->submission = $destsubmission->id;
+            $DB->insert_record('assignsubmission_file', $wordfilesubmission);
         }
         return true;
     }

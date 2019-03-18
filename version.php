@@ -24,9 +24,10 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2019031600;
-$plugin->release   = "0.1.4 (Build 2019031600)";
+$plugin->version   = 2019031800;
+$plugin->release   = "0.1.6 (Build 2019031800)";
 $plugin->requires  = 2016052300; // Moodle 3.1 or higher.
 $plugin->component = 'assignsubmission_word2pdf';
 $plugin->maturity  = MATURITY_ALPHA;
 $plugin->cron      = 0;
+$plugin->dependencies = array('atto_wordimport' => 2018060401);
