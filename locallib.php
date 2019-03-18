@@ -29,7 +29,8 @@ global $CFG;
 require_once($CFG->libdir . '/pdflib.php');
 require_once($CFG->libdir . '/tcpdf/tcpdf.php');
 require_once($CFG->dirroot . '/mod/assign/submission/word2pdf/lib.php');
-require_once($CFG->dirroot . '/mod/assign/feedback/editpdf/fpdi/fpdi.php');
+// require_once($CFG->dirroot . '/mod/assign/feedback/editpdf/fpdi/fpdi.php');
+// require_once($CFG->dirroot . '/mod/assign/feedback/editpdf/lib.php');
 
 /*
  * Library class for Microsoft Word file to PDF conversion.
@@ -93,7 +94,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
      * @return bool
      */
     public function save(stdClass $submission, stdClass $data) {
-        global $USER, $DB, $SESSION, $CFG;
+        global $USER;
 
         // Make a list of Word files to convert to PDF format.
         $fileoptions = $this->get_file_options();
@@ -105,7 +106,6 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_word2pdf',
                                      ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT, $submission->id, "id", false);
 
-        $count = $this->count_files($submission->id, ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT);
         // Send files to event system.
         // Let Moodle know that an assessable file was uploaded (eg for plagiarism detection).
         $params = array(
@@ -124,8 +124,8 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         $event->set_legacy_files($files);
         $event->trigger();
 
-        $wordfilesubmission = $this->get_word2pdf_submission($submission->id);
-        if ($wordfilesubmission && !$this->assignment->get_instance()->submissiondrafts) {
+        // $wordfilesubmission = $this->get_word2pdf_submission($submission->id);
+        if (!$this->assignment->get_instance()->submissiondrafts) {
             // No 'submit assignment' button - need to submit immediately.
             $this->submit_for_grading($submission);
         }
@@ -212,11 +212,18 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         $combinedhtml = "";
         foreach ($files as $file) {
             $combinedhtml .= assignsubmission_word2pdf_convert_to_xhtml($file->get_filename(), $context->id, $submission->id);
+            $combinedauthor = $file->author;
         }
 
         // Create a single PDF file from the merged HTML content.
-        $mypdf = new TCPDF();
-        $mypdf->writeHTML($html);
+        $mypdf = new pdf();
+        $mypdf->writeHTML($combinedhtml);
+        //  Document info
+        $mypdf->SetAuthor($combinedauthor);
+        $mypdf->SetCreator($combinedauthor);
+
+        //  Write to a predefined PDF file name.
+        $pdf = $mypdf->Output($destfile, 'F');
         $pagecount  = $mypdf->getNumPages();
         if (!$pagecount) {
             return 0; // No pages converted file - this shouldn't happen.
@@ -298,7 +305,6 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         }
 
         if ($submission->status == ASSIGN_SUBMISSION_STATUS_DRAFT) {
-            $count = $this->count_files($submission->id, ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT);
             $output .= $this->assignment->render_area_files('assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT,
                                                             $submission->id);
         } else {
@@ -335,14 +341,11 @@ class assign_submission_word2pdf extends assign_submission_plugin {
     public function delete_instance() {
         global $DB;
 
-        $params = array('assignment' => $this->assignment->get_instance()->id);
-        $submissions = $DB->get_records('assignsubmission_word2pdf', $params);
-
         // Delete all PDF submission records for this assignment.
+        $params = array('assignment' => $this->assignment->get_instance()->id);
         $DB->delete_records('assignsubmission_word2pdf', $params);
 
         // All files in the module context are automatically deleted - no need to delete each area individually.
-
         return true;
     }
 

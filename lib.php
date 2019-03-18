@@ -163,8 +163,8 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
     $parameters = array (
         'moodle_language' => current_language(),
         'moodle_textdirection' => (right_to_left()) ? 'rtl' : 'ltr',
-        'heading1stylelevel' => get_config('atto_wordimport', 'heading1stylelevel'),
-        'pluginname' => 'atto_wordimport', // Include plugin name to control image data handling inside XSLT.
+        'heading1stylelevel' => 1, // Map Heading1 style to h1 element, Heading2 to h2, etc.
+        'pluginname' => 'atto_wordimport', // Save images as files in the draft user area.
         'debug_flag' => DEBUG_WORDIMPORT
     );
 
