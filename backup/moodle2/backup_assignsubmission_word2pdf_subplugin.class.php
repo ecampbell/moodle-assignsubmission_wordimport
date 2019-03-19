@@ -25,16 +25,19 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Provides the information to backup submission files
+ * Provides the information to backup PDF files created from Word documents
  *
  * This just adds its filearea to the annotations and records the number of files
  *
+ * @package assignsubmission_word2pdf
+ * @copyright 2019 Eoin Campbell
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class backup_assignsubmission_word2pdf_subplugin extends backup_subplugin {
 
     /**
-     *
      * Returns the subplugin information to attach to submission element
+     *
      * @return backup_subplugin_element
      */
     protected function define_submission_subplugin_structure() {
@@ -45,32 +48,15 @@ class backup_assignsubmission_word2pdf_subplugin extends backup_subplugin {
         $subpluginelement = new backup_nested_element('submission_word2pdf', null,
                                                       array('numpages', 'submission', 'status'));
 
-        // Backup comments / annotations here, rather than in the 'feedback' backup.
-        $comments = new backup_nested_element('pdfcomments');
-        $comment = new backup_nested_element('pdfcomment', null,
-                                             array('submissionid', 'posx', 'posy', 'width', 'rawtext', 'pageno', 'colour'));
-
-        $annotations = new backup_nested_element('pdfannotations');
-        $annotation = new backup_nested_element('pdfannotation', null,
-                                                array('submissionid', 'pageno', 'startx', 'starty', 'endx', 'endy',
-                                                     'path', 'colour', 'type'));
-
         // Connect XML elements into the tree.
         $subplugin->add_child($subpluginwrapper);
         $subpluginwrapper->add_child($subpluginelement);
-        $subpluginelement->add_child($comments);
-        $comments->add_child($comment);
-        $subpluginelement->add_child($annotations);
-        $annotations->add_child($annotation);
 
         // Set source to populate the data.
         $subpluginelement->set_source_table('assignsubmission_word2pdf', array('submission' => backup::VAR_PARENTID));
-        $comment->set_source_table('assignfeedback_pdf_cmnt', array('submissionid' => backup::VAR_PARENTID));
-        $annotation->set_source_table('assignfeedback_pdf_annot', array('submissionid' => backup::VAR_PARENTID));
 
         $subpluginelement->annotate_files('assignsubmission_word2pdf', 'submission_word2pdf_draft', 'submission');
         $subpluginelement->annotate_files('assignsubmission_word2pdf', 'submission_word2pdf_final', 'submission');
-        $subpluginelement->annotate_files('assignfeedback_pdf', 'feedback_pdf_response', 'submission');
         return $subplugin;
     }
 }

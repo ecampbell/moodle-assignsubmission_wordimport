@@ -16,12 +16,16 @@
 
 /**
  * This file contains the definition for the library class for the Microsoft Word (.docx) file submission plugin
+ *
  * Originally written by Davo Smith (assignsubmission_pdf).
  *
  * @package   assignsubmission_word2pdf
  * @copyright 2019 Eoin Campbell
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+use \assignfeedback_editpdf\document_services;
+use \assignfeedback_editpdf\combined_document;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -34,6 +38,10 @@ require_once($CFG->dirroot . '/mod/assign/submission/word2pdf/lib.php');
 
 /*
  * Library class for Microsoft Word file to PDF conversion.
+ *
+ * @package   assignsubmission_word2pdf
+ * @copyright 2019 Eoin Campbell
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class assign_submission_word2pdf extends assign_submission_plugin {
 
@@ -210,6 +218,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         $files = $fs->get_area_files($context->id, 'assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT,
                                      $submission->id, "sortorder, id", false);
         $combinedhtml = "";
+        $combinedauthor = "";
         foreach ($files as $file) {
             $combinedhtml .= assignsubmission_word2pdf_convert_to_xhtml($file->get_filename(), $context->id, $submission->id);
             $combinedauthor = $file->author;
@@ -218,28 +227,29 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         // Create a single PDF file from the merged HTML content.
         $mypdf = new pdf();
         $mypdf->writeHTML($combinedhtml);
-        //  Document info
+        // Document information.
         $mypdf->SetAuthor($combinedauthor);
         $mypdf->SetCreator($combinedauthor);
 
-        //  Write to a predefined PDF file name.
-        $pdf = $mypdf->Output($destfile, 'F');
+        // Get the PDF file as a string.
+        $pdf = $mypdf->Output($destfile, 'S');
         $pagecount  = $mypdf->getNumPages();
         if (!$pagecount) {
             return 0; // No pages converted file - this shouldn't happen.
         }
 
         // Copy the combined file into the submission area, deleting any previous version first.
-        $fs->delete_area_files($context->id, 'assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_FINAL, $submission->id);
-        $fileinfo = array(
-            'contextid' => $context->id,
-            'component' => 'assignsubmission_word2pdf',
-            'filearea' => ASSIGNSUBMISSION_WORD2PDF_FA_FINAL,
-            'itemid' => $submission->id,
-            'filename' => ASSIGNSUBMISSION_WORD2PDF_FILENAME,
-            'filepath' => $this->get_subfolder()
-        );
-        $fs->create_file_from_pathname($fileinfo, $destfile);
+        // Verify the PDF.
+        $verifypdf = new pdf();
+        $verifypagecount = $verifypdf->load_pdf($destfile);
+        $verifypdf->Close();
+        if ($verifypagecount <= 0) {
+            // No pages were found in the combined PDF.
+            return combined_document::mark_combination_failed();
+        }
+
+        // Store the newly created file as a stored_file.
+        combined_document::store_combined_file($destfile, $contextid, $itemid);
 
         return $pagecount;
     }
@@ -387,6 +397,11 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         );
     }
 
+    /**
+     * Return a default subfolder path
+     *
+     * @return string
+     */
     protected function get_subfolder() {
         return '/1/';
     }
