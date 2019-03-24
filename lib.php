@@ -43,7 +43,7 @@ define('ASSIGNSUBMISSION_WORD2PDF_STATUS_EMPTY', 3);
 /**
  * File areas for file submission assignment
  */
-define('ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT', 'submission_word2pdf_draft'); // Files uploaded but not submitted for marking.
+define('ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT', 'submission_files'); // Files uploaded but not submitted for marking.
 define('ASSIGNSUBMISSION_WORD2PDF_FA_FINAL', 'submission_word2pdf_final'); // Generated combined PDF.
 
 define('ASSIGNSUBMISSION_WORD2PDF_FILENAME', 'submission.pdf');
@@ -136,12 +136,15 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
     $word2xmlstylesheet1 = $CFG->dirroot . '/lib/editor/atto/plugins/wordimport/wordml2xhtmlpass1.xsl'; // WordML to XHTML.
     $word2xmlstylesheet2 = $CFG->dirroot . '/lib/editor/atto/plugins/wordimport/wordml2xhtmlpass2.xsl'; // Clean up XHTML.
 
-    // @codingStandardsIgnoreLine debugging(__FUNCTION__ . ":" . __LINE__ . ": filename = \"{$filename}\"", DEBUG_WORDIMPORT);
+    $trace = new html_progress_trace();
+    $trace->output("assignsubmission_word2pdf_convert_to_xhtml(filename = $filename, usercontextid = $usercontextid, draftitemid = $draftitemid)", 3);
+
+    debugging(__FUNCTION__ . ":" . __LINE__ . ": filename = \"{$filename}\"", DEBUG_WORDIMPORT);
     // Check that we can unzip the Word .docx file into its component files.
     $zipres = zip_open($filename);
     if (!is_resource($zipres)) {
         // Cannot unzip file.
-        atto_wordimport_debug_unlink($filename);
+        assignsubmission_word2pdf_debug_unlink($filename);
         throw new moodle_exception('cannotunzipfile', 'error');
     }
 
@@ -256,7 +259,7 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
                     // @codingStandardsIgnoreLine $wordmldata .= "<settingsLinks>" . $xmlfiledata . "</settingsLinks>\n";
                     // @codingStandardsIgnoreLine break;
                 default:
-                    // @codingStandardsIgnoreLine debugging(__FUNCTION__ . ":" . __LINE__ . ": Ignore $zefilename", DEBUG_WORDIMPORT);
+                    debugging(__FUNCTION__ . ":" . __LINE__ . ": Ignore $zefilename", DEBUG_WORDIMPORT);
             }
         }
         // Get the next file in the Zip package.
@@ -280,12 +283,12 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
     $xsltproc = xslt_create();
     if (!($xsltoutput = xslt_process($xsltproc, $tempwordmlfilename, $word2xmlstylesheet1, null, null, $parameters))) {
         // Transformation failed.
-        atto_wordimport_debug_unlink($tempwordmlfilename);
+        assignsubmission_word2pdf_debug_unlink($tempwordmlfilename);
         throw new moodle_exception('transformationfailed', 'atto_wordimport', $tempwordmlfilename);
     }
-    atto_wordimport_debug_unlink($tempwordmlfilename);
-    // @codingStandardsIgnoreLine debugging(__FUNCTION__ . ":" . __LINE__ . ": Import XSLT Pass 1 succeeded, XHTML output fragment = " .
-    // @codingStandardsIgnoreLine     str_replace("\n", "", substr($xsltoutput, 0, 200)), DEBUG_WORDIMPORT);
+    assignsubmission_word2pdf_debug_unlink($tempwordmlfilename);
+    debugging(__FUNCTION__ . ":" . __LINE__ . ": Import XSLT Pass 1 succeeded, XHTML output fragment = " .
+        str_replace("\n", "", substr($xsltoutput, 0, 200)), DEBUG_WORDIMPORT);
 
     // Write output of Pass 1 to a temporary file, for use in Pass 2.
     $tempxhtmlfilename = $CFG->tempdir . '/' . basename($filename, ".tmp") . ".if1";
@@ -300,10 +303,10 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
     // Pass 2 - tidy up linear XHTML a bit.
     if (!($xsltoutput = xslt_process($xsltproc, $tempxhtmlfilename, $word2xmlstylesheet2, null, null, $parameters))) {
         // Transformation failed.
-        atto_wordimport_debug_unlink($tempxhtmlfilename);
+        assignsubmission_word2pdf_debug_unlink($tempxhtmlfilename);
         throw new moodle_exception('transformationfailed', 'atto_wordimport', $tempxhtmlfilename);
     }
-    atto_wordimport_debug_unlink($tempxhtmlfilename);
+    assignsubmission_word2pdf_debug_unlink($tempxhtmlfilename);
 
     // Strip out superfluous namespace declarations on paragraph elements, which Moodle 2.7+ on Windows seems to throw in.
     $xsltoutput = str_replace('<p xmlns="http://www.w3.org/1999/xhtml"', '<p', $xsltoutput);
@@ -325,8 +328,10 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
         file_put_contents($tempxhtmlfilename, $xsltoutput);
     }
 
+    $trace->output("assignsubmission_word2pdf_convert_to_xhtml() -> \"" . substr($xsltoutput, 1, 100) . "\"", 3);
+    $trace->finished();
     return $xsltoutput;
-}   // End function atto_wordimport_convert_to_xhtml.
+}   // End function assignsubmission_word2pdf_convert_to_xhtml.
 
 
 /**
@@ -336,10 +341,16 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
  * @return string XHTML text inside <body> element
  */
 function assignsubmission_word2pdf_get_html_body($xhtmlstring) {
+    $trace = new html_progress_trace();
+    $trace->output("assignsubmission_word2pdf_get_html_body(xhtmlstring = \"" . substr($xhtmlstring, 0, 100) . "\")", 3);
     $matches = null;
     if (preg_match('/<body[^>]*>(.+)<\/body>/is', $xhtmlstring, $matches)) {
+        $trace->output("assignsubmission_word2pdf_get_html_body() -> \"" . substr($matches[1], 0, 100) . "\"", 3);
+        $trace->finished();
         return $matches[1];
     } else {
+        $trace->output("assignsubmission_word2pdf_get_html_body() -> (unchanged)", 3);
+        $trace->finished();
         return $xhtmlstring;
     }
 }
