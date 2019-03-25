@@ -108,8 +108,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
     public function save(stdClass $submission, stdClass $data) {
         global $USER;
 
-        $trace = new html_progress_trace();
-        $trace->output("save(submission->id = $submission->id)");
+        debugging(__FUNCTION__ . "(submission->id = $submission->id)", DEBUG_WORDIMPORT);
         // Make a list of Word files to convert to PDF format.
         $fileoptions = $this->get_file_options();
         file_postupdate_standard_filemanager($data, 'wordfiles', $fileoptions, $this->assignment->get_context(),
@@ -144,8 +143,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
             $this->submit_for_grading($submission);
         }
 
-        $trace->output("save() -> true");
-        $trace->finished();
+        debugging(__FUNCTION__ . "() -> true", DEBUG_WORDIMPORT);
         return true;
     }
 
@@ -158,8 +156,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
     public function submit_for_grading($submission = null) {
         global $DB, $USER;
 
-        $trace = new html_progress_trace();
-        $trace->output("submit_for_grading(submission->id = $submission->id)", 1);
+        debugging(__FUNCTION__ . "(submission->id = $submission->id)", DEBUG_WORDIMPORT);
         if (is_null($submission)) {
             if (!empty($this->assignment->get_instance()->teamsubmission)) {
                 $submission = $this->assignment->get_group_submission($USER->id, 0, true);
@@ -188,8 +185,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
             $upd->submission = $submission->id;
             $upd->id = $DB->insert_record('assignsubmission_word2pdf', $upd);
         }
-        $trace->output("submit_for_grading()", 1);
-        $trace->finished();
+        debugging(__FUNCTION__ . "() -> void", DEBUG_WORDIMPORT);
     }
 
     /**
@@ -210,18 +206,16 @@ class assign_submission_word2pdf extends assign_submission_plugin {
      * Convert each of the Word files into HTML, and then create a PDF
      *
      * @param stdClass $submission Details of the submission to process
-     * @return int Number of pages
+     * @return combined_document
      */
     protected function create_submission_pdf(stdClass $submission) {
         global $USER;
 
-        $trace = new html_progress_trace();
-        $trace->output("create_submission_pdf(submission->id = $submission->id)", 2);
+        debugging(__FUNCTION__ . "(submission->id = $submission->id)", DEBUG_WORDIMPORT);
         // Create the required temporary folders.
         $temparea = $this->get_temp_folder($submission->id);
         $tempdestarea = $temparea . 'sub';
         $destfile = $tempdestarea . '/' . ASSIGNSUBMISSION_WORD2PDF_FILENAME;
-        $trace->output("create_submission_pdf(): destfile = $destfile", 2);
         if (!file_exists($temparea) || !file_exists($tempdestarea)) {
             if (!mkdir($temparea, 0777, true) || !mkdir($tempdestarea, 0777, true)) {
                 $errdata = (object)array('temparea' => $temparea, 'tempdestarea' => $tempdestarea);
@@ -232,7 +226,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         // Get the Word files submitted.
         $context = $this->assignment->get_context();
         $fs = get_file_storage();
-        $trace->output("create_submission_pdf(): context->id = $context->id;", 2);
+        debugging(__FUNCTION__ . ":" . __LINE__ . ": context->id = $context->id", DEBUG_WORDIMPORT);
         $files = $fs->get_area_files($context->id, 'assignsubmission_file', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT,
                                      $submission->id, "sortorder, id", false);
         $mypdf = new pdf();
@@ -240,8 +234,9 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         $mypdf->SetAuthor("Eoin Campbell");
         $combinedhtml = "";
         $combinedauthor = "";
+        $filecount = 0;
         foreach ($files as $file) {
-            $trace->output("create_submission_pdf(): process file = " . $file->get_filename(), 2);
+            debugging(__FUNCTION__ . ":" . __LINE__ . ":  process file = " . $file->get_filename(), DEBUG_WORDIMPORT);
             if ($file->get_mimetype() == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
                 // Save the Word file to the file system so it can be unzipped and processed.
                 if (!$tmpfilename = $file->copy_content_to_temp()) {
@@ -249,15 +244,15 @@ class assign_submission_word2pdf extends assign_submission_plugin {
                     throw new moodle_exception(get_string('errorcreatingfile', 'error', $file->get_filename()));
                 }
                 $htmltext = assignsubmission_word2pdf_convert_to_xhtml($tmpfilename, $context->id, $submission->id);
-                $trace->output("create_submission_pdf(): htmltext = " . substr($htmltext, 0, 200), 2);
                 $bodyhtml = assignsubmission_word2pdf_get_html_body($htmltext);
-                $trace->output("create_submission_pdf(): bodyhtml = " . substr($bodyhtml, 0, 200), 2);
+                debugging(__FUNCTION__ . ":" . __LINE__ . ": bodyhtml = " . substr($bodyhtml, 0, 200), DEBUG_WORDIMPORT);
                 $mypdf->startPage();
                 $mypdf->writeHTML("<h1>File: " . $file->get_filename() . "</h1>");
                 $mypdf->writeHTML($bodyhtml);
                 $mypdf->endPage();
                 $combinedauthor = $file->author;
             }
+            $filecount++;
         }
 
         // Set the author name.
@@ -272,34 +267,39 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         $pdffilerec->filepath = '/';
         $pdffilerec->filename = document_services::COMBINED_PDF_FILENAME;
         $fs = get_file_storage();
-        $existingfile = $fs->get_file($context->id, $pdffilerec->component, $pdffilerec->filearea, $pdffilerec->itemid, 
+        $existingfile = $fs->get_file($context->id, $pdffilerec->component, $pdffilerec->filearea, $pdffilerec->itemid,
                                         $pdffilerec->filepath, $pdffilerec->filename);
         if ($existingfile) {
             // If the file already exists, remove it so it can be updated.
-            $trace->output("create_submission_pdf(): delete existing file $pdffilerec->filename", 2);
+            debugging(__FUNCTION__ . ":" . __LINE__ . ": delete existing file $pdffilerec->filename", DEBUG_WORDIMPORT);
             $existingfile->delete();
         }
 
-        $trace->output("create_submission_pdf(): create new PDF file $pdffilerec->contextid, $pdffilerec->component, $pdffilerec->filearea, $pdffilerec->itemid, $pdffilerec->filename", 2);
+        debugging(__FUNCTION__ . ":" . __LINE__ . ": create new PDF file $pdffilerec->contextid, $pdffilerec->component," .
+                    " $pdffilerec->filearea, $pdffilerec->itemid, $pdffilerec->filename", DEBUG_WORDIMPORT);
+        debugging(__FUNCTION__ . ":" . __LINE__ . ": destfile = $destfile", DEBUG_WORDIMPORT);
         $mypdf->Output($destfile, 'F');
         // $newfile = $fs->create_file_from_string($pdffilerec, $mypdf->Output("", 'S'));
         $newfile = $fs->create_file_from_pathname($pdffilerec, $destfile);
         $pagecount  = $mypdf->page_count();
-        $trace->output("create_submission_pdf(): pagecount = $pagecount", 2);
         if (!$pagecount) {
-            $trace->output("create_submission_pdf() -> 0 (no pages)", 2);
-            $trace->finished();
-            return 0; // No pages in converted file - this shouldn't happen.
+            debugging(__FUNCTION__ . ":" . __LINE__ . ": pagecount = $pagecount", DEBUG_WORDIMPORT);
+            // return 0; // No pages in converted file - this shouldn't happen.
         }
 
-        // Store the newly created file as a stored_file.
-        $mypdf->set_source_files(array($newfile));
-        $mypdf->combine_files($contextid, $itemid);
+        // Save the newly created file as a stored_file.
+        $files = array();
+        $files[$pdffilerec->filename] = $newfile;
+        $combineddocument = new combined_document();
+        $combineddocument->set_source_files($files);
+        $combineddocument->set_combined_file($destfile);
+        $document = document_services::get_combined_pdf_for_attempt($this->assignment, $USER->id, 1);
+        // $mypdf->set_source_files(array($newfile));
+        // $mypdf->combine_files($contextid, $itemid);
 
-        $trace->output("create_submission_pdf() -> $pagecount", 2);
-        $trace->finished();
-        return $pagecount;
-    }
+        debugging(__FUNCTION__ . "() -> $filecount", DEBUG_WORDIMPORT);
+        return $filecount;
+    }   // End of create_submission_pdf().
 
     /**
      * Produce a list of files suitable for export that represent this submission.

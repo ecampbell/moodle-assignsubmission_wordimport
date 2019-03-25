@@ -136,10 +136,7 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
     $word2xmlstylesheet1 = $CFG->dirroot . '/lib/editor/atto/plugins/wordimport/wordml2xhtmlpass1.xsl'; // WordML to XHTML.
     $word2xmlstylesheet2 = $CFG->dirroot . '/lib/editor/atto/plugins/wordimport/wordml2xhtmlpass2.xsl'; // Clean up XHTML.
 
-    $trace = new html_progress_trace();
-    $trace->output("assignsubmission_word2pdf_convert_to_xhtml(filename = $filename, usercontextid = $usercontextid, draftitemid = $draftitemid)", 3);
-
-    debugging(__FUNCTION__ . ":" . __LINE__ . ": filename = \"{$filename}\"", DEBUG_WORDIMPORT);
+    debugging(__FUNCTION__ . "(filename = \"{$filename}\", usercontextid = $usercontextid, draftitemid = $draftitemid)", DEBUG_WORDIMPORT);
     // Check that we can unzip the Word .docx file into its component files.
     $zipres = zip_open($filename);
     if (!is_resource($zipres)) {
@@ -166,7 +163,7 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
     $parameters = array (
         'moodle_language' => current_language(),
         'moodle_textdirection' => (right_to_left()) ? 'rtl' : 'ltr',
-        'heading1stylelevel' => 1, // Map Heading1 style to h1 element, Heading2 to h2, etc.
+        'heading1stylelevel' => 2, // Map Heading1 style to h2 element, Heading2 to h3, etc.
         'pluginname' => 'atto_wordimport', // Save images as files in the draft user area.
         'debug_flag' => DEBUG_WORDIMPORT
     );
@@ -202,7 +199,6 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
 
         // Insert internal images into the files table.
         if (strpos($zefilename, "media")) {
-            // @codingStandardsIgnoreLine $imageformat = substr($zefilename, strrpos($zefilename, ".") + 1);
             $imagedata = zip_entry_read($zipentry, $zefilesize);
             $imagename = basename($zefilename);
             $imagesuffix = strtolower(substr(strrchr($zefilename, "."), 1));
@@ -225,9 +221,6 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
                 $imagestring .= "<file filename=\"media/{$imagename}\"";
                 $imagestring .= " contextid=\"{$usercontextid}\" itemid=\"{$draftitemid}\"";
                 $imagestring .= " name=\"{$imagenameunique}\" url=\"{$imageurl}\">{$imageurl}</file>\n";
-            // @codingStandardsIgnoreLine } else {
-                // @codingStandardsIgnoreLine debugging(__FUNCTION__ . ":" . __LINE__ . ": ignore unsupported media file $zefilename" .
-                // @codingStandardsIgnoreLine     " = $imagename, imagesuffix = $imagesuffix", DEBUG_WORDIMPORT);
             }
         } else {
             // Look for required XML files, read and wrap it, remove the XML declaration, and add it to the XML string.
@@ -255,11 +248,7 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
                 case "word/_rels/footnotes.xml.rels":
                     $wordmldata .= "<footnoteLinks>" . $xmlfiledata . "</footnoteLinks>\n";
                     break;
-                // @codingStandardsIgnoreLine case "word/_rels/settings.xml.rels":
-                    // @codingStandardsIgnoreLine $wordmldata .= "<settingsLinks>" . $xmlfiledata . "</settingsLinks>\n";
-                    // @codingStandardsIgnoreLine break;
                 default:
-                    debugging(__FUNCTION__ . ":" . __LINE__ . ": Ignore $zefilename", DEBUG_WORDIMPORT);
             }
         }
         // Get the next file in the Zip package.
@@ -287,8 +276,6 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
         throw new moodle_exception('transformationfailed', 'atto_wordimport', $tempwordmlfilename);
     }
     assignsubmission_word2pdf_debug_unlink($tempwordmlfilename);
-    debugging(__FUNCTION__ . ":" . __LINE__ . ": Import XSLT Pass 1 succeeded, XHTML output fragment = " .
-        str_replace("\n", "", substr($xsltoutput, 0, 200)), DEBUG_WORDIMPORT);
 
     // Write output of Pass 1 to a temporary file, for use in Pass 2.
     $tempxhtmlfilename = $CFG->tempdir . '/' . basename($filename, ".tmp") . ".if1";
@@ -319,17 +306,13 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
     $xsltoutput = str_replace(' xmlns:mml="http://www.w3.org/1998/Math/MathML"', '', $xsltoutput);
     $xsltoutput = str_replace('<math>', '<math xmlns="http://www.w3.org/1998/Math/MathML">', $xsltoutput);
 
-    // @codingStandardsIgnoreLine debugging(__FUNCTION__ . ":" . __LINE__ . ": Import XSLT Pass 2 succeeded, output = " .
-    // @codingStandardsIgnoreLine     str_replace("\n", "", substr($xsltoutput, 500, 2000)), DEBUG_WORDIMPORT);
-
     // Keep the converted XHTML file for debugging if developer debugging enabled.
     if (DEBUG_WORDIMPORT == DEBUG_DEVELOPER and debugging(null, DEBUG_DEVELOPER)) {
         $tempxhtmlfilename = $CFG->tempdir . '/' . basename($filename, ".tmp") . ".xhtml";
         file_put_contents($tempxhtmlfilename, $xsltoutput);
     }
 
-    $trace->output("assignsubmission_word2pdf_convert_to_xhtml() -> \"" . substr($xsltoutput, 1, 100) . "\"", 3);
-    $trace->finished();
+    debugging(__FUNCTION__ . "() -> \"" . substr($xsltoutput, 0, 100) . "\"", DEBUG_WORDIMPORT);
     return $xsltoutput;
 }   // End function assignsubmission_word2pdf_convert_to_xhtml.
 
@@ -341,17 +324,12 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
  * @return string XHTML text inside <body> element
  */
 function assignsubmission_word2pdf_get_html_body($xhtmlstring) {
-    $trace = new html_progress_trace();
-    $trace->output("assignsubmission_word2pdf_get_html_body(xhtmlstring = \"" . substr($xhtmlstring, 0, 100) . "\")", 3);
     $matches = null;
-    if (preg_match('/<body[^>]*>(.+)<\/body>/is', $xhtmlstring, $matches)) {
-        $trace->output("assignsubmission_word2pdf_get_html_body() -> \"" . substr($matches[1], 0, 100) . "\"", 3);
-        $trace->finished();
+    $noimgxhtmlstring = assignsubmission_word2pdf_strip_images($xhtmlstring);
+    if (preg_match('/<body[^>]*>(.+)<\/body>/is', $noimgxhtmlstring, $matches)) {
         return $matches[1];
     } else {
-        $trace->output("assignsubmission_word2pdf_get_html_body() -> (unchanged)", 3);
-        $trace->finished();
-        return $xhtmlstring;
+        return $noimgxhtmlstring;
     }
 }
 
@@ -367,3 +345,30 @@ function assignsubmission_word2pdf_debug_unlink($filename) {
     }
 }
 
+/**
+ * Use a DOM parser to accurately replace images with their alt text.
+ *
+ * @param string $html
+ * @return string New html with no image tags.
+ */
+function assignsubmission_word2pdf_strip_images($html) {
+    $dom = new DOMDocument();
+    $dom->loadHTML("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" . $html);
+    $images = $dom->getElementsByTagName('img');
+    $i = 0;
+
+    for ($i = ($images->length - 1); $i >= 0; $i--) {
+        $node = $images->item($i);
+
+        if ($node->hasAttribute('alt')) {
+            $replacement = ' [ ' . $node->getAttribute('alt') . ' ] ';
+        } else {
+            $replacement = ' ';
+        }
+
+        $text = $dom->createTextNode($replacement);
+        $node->parentNode->replaceChild($text, $node);
+    }
+    $count = 1;
+    return str_replace("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>", "", $dom->saveHTML(), $count);
+}
