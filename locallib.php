@@ -235,6 +235,9 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         $trace->output("create_submission_pdf(): context->id = $context->id;", 2);
         $files = $fs->get_area_files($context->id, 'assignsubmission_file', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT,
                                      $submission->id, "sortorder, id", false);
+        $mypdf = new pdf();
+        $mypdf->SetTitle("Document Title");
+        $mypdf->SetAuthor("Eoin Campbell");
         $combinedhtml = "";
         $combinedauthor = "";
         foreach ($files as $file) {
@@ -249,18 +252,16 @@ class assign_submission_word2pdf extends assign_submission_plugin {
                 $trace->output("create_submission_pdf(): htmltext = " . substr($htmltext, 0, 200), 2);
                 $bodyhtml = assignsubmission_word2pdf_get_html_body($htmltext);
                 $trace->output("create_submission_pdf(): bodyhtml = " . substr($bodyhtml, 0, 200), 2);
-                $combinedhtml .= "<h1>File: " . $file->get_filename() . "</h1>" . $bodyhtml;
+                $mypdf->startPage();
+                $mypdf->writeHTML("<h1>File: " . $file->get_filename() . "</h1>");
+                $mypdf->writeHTML($bodyhtml);
+                $mypdf->endPage();
                 $combinedauthor = $file->author;
             }
         }
 
-        // Create a single PDF file from the merged HTML content.
-        $trace->output("create_submission_pdf(): combinedhtml = " . substr($combinedhtml, 0, 200), 2);
-        $mypdf = new pdf();
-        $mypdf->writeHTML($combinedhtml);
-        // Document information.
+        // Set the author name.
         $mypdf->SetAuthor($combinedauthor);
-        $mypdf->SetCreator($combinedauthor);
 
         // Create a place for the combined PDF file, deleting it if it already exists.
         $pdffilerec = new stdClass();
@@ -283,7 +284,8 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         $mypdf->Output($destfile, 'F');
         // $newfile = $fs->create_file_from_string($pdffilerec, $mypdf->Output("", 'S'));
         $newfile = $fs->create_file_from_pathname($pdffilerec, $destfile);
-        $pagecount  = $mypdf->getNumPages();
+        $pagecount  = $mypdf->page_count();
+        $trace->output("create_submission_pdf(): pagecount = $pagecount", 2);
         if (!$pagecount) {
             $trace->output("create_submission_pdf() -> 0 (no pages)", 2);
             $trace->finished();
