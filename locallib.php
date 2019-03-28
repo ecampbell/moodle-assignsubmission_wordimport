@@ -203,7 +203,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
     }
 
     /**
-     * Convert each of the Word files into HTML, and then create a PDF
+     * Convert each of the Word files into HTML using Atto, and from HTML into PDF using the core PDF library
      *
      * @param stdClass $submission Details of the submission to process
      * @return combined_document
@@ -215,7 +215,6 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         // Create the required temporary folders.
         $temparea = $this->get_temp_folder($submission->id);
         $tempdestarea = $temparea . 'sub';
-        $destfile = $tempdestarea . '/' . ASSIGNSUBMISSION_WORD2PDF_FILENAME;
         if (!file_exists($temparea) || !file_exists($tempdestarea)) {
             if (!mkdir($temparea, 0777, true) || !mkdir($tempdestarea, 0777, true)) {
                 $errdata = (object)array('temparea' => $temparea, 'tempdestarea' => $tempdestarea);
@@ -229,12 +228,13 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         debugging(__FUNCTION__ . ":" . __LINE__ . ": context->id = $context->id", DEBUG_WORDIMPORT);
         $files = $fs->get_area_files($context->id, 'assignsubmission_file', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT,
                                      $submission->id, "sortorder, id", false);
-        $mypdf = new pdf();
-        $mypdf->SetTitle("Document Title");
-        $mypdf->SetAuthor("Eoin Campbell");
         $combinedhtml = "";
         $combinedauthor = "";
         $filecount = 0;
+
+        // Save the newly created files as a combined document list.
+        $combineddocument = new combined_document();
+
         foreach ($files as $file) {
             debugging(__FUNCTION__ . ":" . __LINE__ . ":  process file = " . $file->get_filename(), DEBUG_WORDIMPORT);
             if ($file->get_mimetype() == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
@@ -244,58 +244,52 @@ class assign_submission_word2pdf extends assign_submission_plugin {
                     throw new moodle_exception(get_string('errorcreatingfile', 'error', $file->get_filename()));
                 }
                 $htmltext = assignsubmission_word2pdf_convert_to_xhtml($tmpfilename, $context->id, $submission->id);
-                $bodyhtml = assignsubmission_word2pdf_get_html_body($htmltext);
-                debugging(__FUNCTION__ . ":" . __LINE__ . ": bodyhtml = " . substr($bodyhtml, 0, 200), DEBUG_WORDIMPORT);
+                $html = assignsubmission_word2pdf_strip_images($htmltext);
+                // $bodyhtml = assignsubmission_word2pdf_get_html_body($htmltext);
+                // debugging(__FUNCTION__ . ":" . __LINE__ . ": bodyhtml = " . substr($bodyhtml, 0, 200), DEBUG_WORDIMPORT);
+                $mypdf = new pdf();
+                $mypdf->SetTitle("Word file name: " . $file->get_filename());
+                $mypdf->SetAuthor($file->author);
                 $mypdf->startPage();
                 $mypdf->writeHTML("<h1>File: " . $file->get_filename() . "</h1>");
-                $mypdf->writeHTML($bodyhtml);
+                $mypdf->writeHTML($html);
                 $mypdf->endPage();
-                $combinedauthor = $file->author;
+                $pdffilename = basename($file->get_filename(), '.docx') . '.pdf';
+                $destfile = $tempdestarea . '/' . $pdffilename;
+                debugging(__FUNCTION__ . ":" . __LINE__ . ": destfile = $destfile", DEBUG_WORDIMPORT);
+                // Write PDF file to temporary file system location.
+                $mypdf->Output($destfile, 'F');
+
+                // Create a place for the combined PDF file, deleting it if it already exists.
+                $pdffilerec = new stdClass();
+                $pdffilerec->contextid = $context->id;
+                $pdffilerec->component = 'assignfeedback_editpdf';
+                $pdffilerec->filearea = document_services::COMBINED_PDF_FILEAREA;
+                $pdffilerec->itemid = $USER->id;
+                $pdffilerec->filepath = '/';
+                $pdffilerec->filename = $pdffilename;
+                $fs = get_file_storage();
+                debugging(__FUNCTION__ . ":" . __LINE__ . ": create new PDF file $pdffilerec->contextid, $pdffilerec->component," .
+                            " $pdffilerec->filearea, $pdffilerec->itemid, $pdffilerec->filename", DEBUG_WORDIMPORT);
+                $existingfile = $fs->get_file($context->id, $pdffilerec->component, $pdffilerec->filearea, $pdffilerec->itemid,
+                                                $pdffilerec->filepath, $pdffilerec->filename);
+                if ($existingfile) {
+                    // If the file already exists, remove it so it can be updated.
+                    debugging(__FUNCTION__ . ":" . __LINE__ . ": delete existing file $pdffilerec->filename", DEBUG_WORDIMPORT);
+                    $existingfile->delete();
+                }
+                // Create a stored file from the PDF file just created.
+                $newfile = $fs->create_file_from_pathname($pdffilerec, $destfile);
+                $pagecount  = $mypdf->page_count();
+                if (!$pagecount) {
+                    debugging(__FUNCTION__ . ":" . __LINE__ . ": pagecount = $pagecount", DEBUG_WORDIMPORT);
+                    // return 0; // No pages in converted file - this shouldn't happen.
+                }
+                // Add this PDF file to the list of all PDFs to combine.
+                $combineddocument->add_source_file($newfile);
             }
             $filecount++;
         }
-
-        // Set the author name.
-        $mypdf->SetAuthor($combinedauthor);
-
-        // Create a place for the combined PDF file, deleting it if it already exists.
-        $pdffilerec = new stdClass();
-        $pdffilerec->contextid = $context->id;
-        $pdffilerec->component = 'assignfeedback_editpdf';
-        $pdffilerec->filearea = document_services::COMBINED_PDF_FILEAREA;
-        $pdffilerec->itemid = $USER->id;
-        $pdffilerec->filepath = '/';
-        $pdffilerec->filename = document_services::COMBINED_PDF_FILENAME;
-        $fs = get_file_storage();
-        $existingfile = $fs->get_file($context->id, $pdffilerec->component, $pdffilerec->filearea, $pdffilerec->itemid,
-                                        $pdffilerec->filepath, $pdffilerec->filename);
-        if ($existingfile) {
-            // If the file already exists, remove it so it can be updated.
-            debugging(__FUNCTION__ . ":" . __LINE__ . ": delete existing file $pdffilerec->filename", DEBUG_WORDIMPORT);
-            $existingfile->delete();
-        }
-
-        debugging(__FUNCTION__ . ":" . __LINE__ . ": create new PDF file $pdffilerec->contextid, $pdffilerec->component," .
-                    " $pdffilerec->filearea, $pdffilerec->itemid, $pdffilerec->filename", DEBUG_WORDIMPORT);
-        debugging(__FUNCTION__ . ":" . __LINE__ . ": destfile = $destfile", DEBUG_WORDIMPORT);
-        $mypdf->Output($destfile, 'F');
-        // $newfile = $fs->create_file_from_string($pdffilerec, $mypdf->Output("", 'S'));
-        $newfile = $fs->create_file_from_pathname($pdffilerec, $destfile);
-        $pagecount  = $mypdf->page_count();
-        if (!$pagecount) {
-            debugging(__FUNCTION__ . ":" . __LINE__ . ": pagecount = $pagecount", DEBUG_WORDIMPORT);
-            // return 0; // No pages in converted file - this shouldn't happen.
-        }
-
-        // Save the newly created file as a stored_file.
-        $files = array();
-        $files[$pdffilerec->filename] = $newfile;
-        $combineddocument = new combined_document();
-        $combineddocument->set_source_files($files);
-        $combineddocument->set_combined_file($destfile);
-        $document = document_services::get_combined_pdf_for_attempt($this->assignment, $USER->id, 1);
-        // $mypdf->set_source_files(array($newfile));
-        // $mypdf->combine_files($contextid, $itemid);
 
         debugging(__FUNCTION__ . "() -> $filecount", DEBUG_WORDIMPORT);
         return $filecount;
