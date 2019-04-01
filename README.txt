@@ -1,7 +1,7 @@
-Word2PDF Submission plugin
+WordImport Submission plugin
 --------------------------------
 
-This plugin for the assignment module allows Teachers to get PDF versions of 
+This plugin for the assignment module allows Teachers to get HTML versions of 
 any Word files uploaded by students for assignments, without relying on the 
 unreliable Unoconv service.
 

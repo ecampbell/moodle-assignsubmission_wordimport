@@ -17,7 +17,7 @@
 /**
  * Definition of the library class for the Microsoft Word (.docx) file conversion plugin.
  *
- * @package   assignsubmission_word2pdf
+ * @package   assignsubmission_wordimport
  * @copyright 2019 Eoin Campbell
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -35,18 +35,18 @@ require_once($CFG->libdir . '/xmlize.php');
  * General definitions
  */
 
-define('ASSIGNSUBMISSION_WORD2PDF_STATUS_NOTSUBMITTED', 0);
-define('ASSIGNSUBMISSION_WORD2PDF_STATUS_SUBMITTED', 1);
-define('ASSIGNSUBMISSION_WORD2PDF_STATUS_RESPONDED', 2);
-define('ASSIGNSUBMISSION_WORD2PDF_STATUS_EMPTY', 3);
+define('ASSIGNSUBMISSION_WORDIMPORT_STATUS_NOTSUBMITTED', 0);
+define('ASSIGNSUBMISSION_WORDIMPORT_STATUS_SUBMITTED', 1);
+define('ASSIGNSUBMISSION_WORDIMPORT_STATUS_RESPONDED', 2);
+define('ASSIGNSUBMISSION_WORDIMPORT_STATUS_EMPTY', 3);
 
 /**
  * File areas for file submission assignment
  */
-define('ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT', 'submission_files'); // Files uploaded but not submitted for marking.
-define('ASSIGNSUBMISSION_WORD2PDF_FA_FINAL', 'submission_word2pdf_final'); // Generated combined PDF.
+define('ASSIGNSUBMISSION_WORDIMPORT_FA_DRAFT', 'submission_files'); // Files uploaded but not submitted for marking.
+define('ASSIGNSUBMISSION_WORDIMPORT_FA_FINAL', 'submission_wordimport_final'); // Generated combined PDF.
 
-define('ASSIGNSUBMISSION_WORD2PDF_FILENAME', 'submission.pdf');
+define('ASSIGNSUBMISSION_WORDIMPORT_FILENAME', 'submission.pdf');
 
 /**
  * Returns the subplugin information to attach to submission element
@@ -59,7 +59,7 @@ define('ASSIGNSUBMISSION_WORD2PDF_FILENAME', 'submission.pdf');
  * @param bool $forcedownload
  * @return backup_subplugin_element
  */
-function assignsubmission_word2pdf_pluginfile($course, $cm, context $context, $filearea, $args, $forcedownload) {
+function assignsubmission_wordimport_pluginfile($course, $cm, context $context, $filearea, $args, $forcedownload) {
     global $DB, $USER;
 
     if ($context->contextlevel != CONTEXT_MODULE) {
@@ -89,12 +89,12 @@ function assignsubmission_word2pdf_pluginfile($course, $cm, context $context, $f
     }
 
     $filename = array_pop($args);
-    if ($filearea == ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT) {
+    if ($filearea == ASSIGNSUBMISSION_WORDIMPORT_FA_DRAFT) {
         if ($submission->status == ASSIGN_SUBMISSION_STATUS_SUBMITTED) {
             return false; // Already submitted for marking.
         }
-    } else if ($filearea == ASSIGNSUBMISSION_WORD2PDF_FA_FINAL) {
-        if ($filename != ASSIGNSUBMISSION_WORD2PDF_FILENAME) {
+    } else if ($filearea == ASSIGNSUBMISSION_WORDIMPORT_FA_FINAL) {
+        if ($filename != ASSIGNSUBMISSION_WORDIMPORT_FILENAME) {
             return false; // Check filename.
         }
         if ($submission->status != ASSIGN_SUBMISSION_STATUS_SUBMITTED) {
@@ -113,7 +113,7 @@ function assignsubmission_word2pdf_pluginfile($course, $cm, context $context, $f
     }
 
     $fs = get_file_storage();
-    $file = $fs->get_file($context->id, 'assignsubmission_word2pdf', $filearea, $itemid, $filepath, $filename);
+    $file = $fs->get_file($context->id, 'assignsubmission_wordimport', $filearea, $itemid, $filepath, $filename);
     if ($file) {
         send_stored_file($file, 86400, 0, $forcedownload);
     }
@@ -130,7 +130,7 @@ function assignsubmission_word2pdf_pluginfile($course, $cm, context $context, $f
  * @param int $draftitemid ID of particular group in draft file area where images should be stored
  * @return string XHTML content extracted from Word file
  */
-function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $draftitemid) {
+function assignsubmission_wordimport_convert_to_xhtml($filename, $usercontextid, $draftitemid) {
     global $CFG, $USER;
 
     $word2xmlstylesheet1 = $CFG->dirroot . '/lib/editor/atto/plugins/wordimport/wordml2xhtmlpass1.xsl'; // WordML to XHTML.
@@ -141,7 +141,7 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
     $zipres = zip_open($filename);
     if (!is_resource($zipres)) {
         // Cannot unzip file.
-        assignsubmission_word2pdf_debug_unlink($filename);
+        assignsubmission_wordimport_debug_unlink($filename);
         throw new moodle_exception('cannotunzipfile', 'error');
     }
 
@@ -272,10 +272,10 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
     $xsltproc = xslt_create();
     if (!($xsltoutput = xslt_process($xsltproc, $tempwordmlfilename, $word2xmlstylesheet1, null, null, $parameters))) {
         // Transformation failed.
-        assignsubmission_word2pdf_debug_unlink($tempwordmlfilename);
+        assignsubmission_wordimport_debug_unlink($tempwordmlfilename);
         throw new moodle_exception('transformationfailed', 'atto_wordimport', $tempwordmlfilename);
     }
-    assignsubmission_word2pdf_debug_unlink($tempwordmlfilename);
+    assignsubmission_wordimport_debug_unlink($tempwordmlfilename);
 
     // Write output of Pass 1 to a temporary file, for use in Pass 2.
     $tempxhtmlfilename = $CFG->tempdir . '/' . basename($filename, ".tmp") . ".if1";
@@ -290,10 +290,10 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
     // Pass 2 - tidy up linear XHTML a bit.
     if (!($xsltoutput = xslt_process($xsltproc, $tempxhtmlfilename, $word2xmlstylesheet2, null, null, $parameters))) {
         // Transformation failed.
-        assignsubmission_word2pdf_debug_unlink($tempxhtmlfilename);
+        assignsubmission_wordimport_debug_unlink($tempxhtmlfilename);
         throw new moodle_exception('transformationfailed', 'atto_wordimport', $tempxhtmlfilename);
     }
-    assignsubmission_word2pdf_debug_unlink($tempxhtmlfilename);
+    assignsubmission_wordimport_debug_unlink($tempxhtmlfilename);
 
     // Strip out superfluous namespace declarations on paragraph elements, which Moodle 2.7+ on Windows seems to throw in.
     $xsltoutput = str_replace('<p xmlns="http://www.w3.org/1999/xhtml"', '<p', $xsltoutput);
@@ -314,7 +314,7 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
 
     debugging(__FUNCTION__ . "() -> \"" . substr($xsltoutput, 0, 100) . "\"", DEBUG_WORDIMPORT);
     return $xsltoutput;
-}   // End function assignsubmission_word2pdf_convert_to_xhtml.
+}   // End function assignsubmission_wordimport_convert_to_xhtml.
 
 
 /**
@@ -323,9 +323,9 @@ function assignsubmission_word2pdf_convert_to_xhtml($filename, $usercontextid, $
  * @param string $xhtmlstring complete XHTML text including head element metadata
  * @return string XHTML text inside <body> element
  */
-function assignsubmission_word2pdf_get_html_body($xhtmlstring) {
+function assignsubmission_wordimport_get_html_body($xhtmlstring) {
     $matches = null;
-    $noimgxhtmlstring = assignsubmission_word2pdf_strip_images($xhtmlstring);
+    $noimgxhtmlstring = assignsubmission_wordimport_strip_images($xhtmlstring);
     if (preg_match('/<body[^>]*>(.+)<\/body>/is', $noimgxhtmlstring, $matches)) {
         return $matches[1];
     } else {
@@ -339,7 +339,7 @@ function assignsubmission_word2pdf_get_html_body($xhtmlstring) {
  * @param string $filename name of file to be deleted
  * @return void
  */
-function assignsubmission_word2pdf_debug_unlink($filename) {
+function assignsubmission_wordimport_debug_unlink($filename) {
     if (DEBUG_WORDIMPORT == 0) {
         unlink($filename);
     }
@@ -351,7 +351,7 @@ function assignsubmission_word2pdf_debug_unlink($filename) {
  * @param string $html
  * @return string New html with no image tags.
  */
-function assignsubmission_word2pdf_strip_images($html) {
+function assignsubmission_wordimport_strip_images($html) {
     $dom = new DOMDocument();
     $dom->loadHTML("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" . $html);
     $images = $dom->getElementsByTagName('img');

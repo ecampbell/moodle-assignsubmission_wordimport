@@ -17,17 +17,17 @@
 /**
  * Privacy information for assignment submission Word to PDF converter - no user data stored.
  *
- * @package     assignsubmission_word2pdf
+ * @package     assignsubmission_wordimport
  * @copyright   2019 Eoin Campbell
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace assignsubmission_word2pdf;
+namespace assignsubmission_wordimport;
 
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Privacy Subsystem for assignsubmission_word2pdf implementing null_provider.
+ * Privacy Subsystem for assignsubmission_wordimport implementing null_provider.
  *
  * @copyright   2019 Eoin Campbell
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later

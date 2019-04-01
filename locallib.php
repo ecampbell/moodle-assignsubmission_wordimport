@@ -19,14 +19,11 @@
  *
  * Originally written by Davo Smith (assignsubmission_pdf).
  *
- * @package   assignsubmission_word2pdf
+ * @package   assignsubmission_wordimport
  * @copyright 2019 Eoin Campbell
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use assignfeedback_editpdf\document_services;
-use assignfeedback_editpdf\combined_document;
-use assignfeedback_editpdf\pdf;
 
 defined('MOODLE_INTERNAL') || die();
 // Development: turn on all debug messages and strict warnings.
@@ -34,20 +31,16 @@ define('DEBUG_WORDIMPORT', E_ALL | E_STRICT);
 // @codingStandardsIgnoreLine define('DEBUG_WORDIMPORT', 0);
 
 global $CFG;
-require_once($CFG->libdir . '/pdflib.php');
-// require_once($CFG->libdir . '/tcpdf/tcpdf.php');
-require_once($CFG->dirroot . '/mod/assign/submission/word2pdf/lib.php');
-// require_once($CFG->dirroot . '/mod/assign/feedback/editpdf/fpdi/fpdi.php');
-// require_once($CFG->dirroot . '/mod/assign/feedback/editpdf/lib.php');
+require_once($CFG->dirroot . '/mod/assign/submission/wordimport/lib.php');
 
 /*
  * Library class for Microsoft Word file to PDF conversion.
  *
- * @package   assignsubmission_word2pdf
+ * @package   assignsubmission_wordimport
  * @copyright 2019 Eoin Campbell
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class assign_submission_word2pdf extends assign_submission_plugin {
+class assign_submission_wordimport extends assign_submission_plugin {
 
     /**
      * Get the name of the file submission plugin
@@ -55,7 +48,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
      * @return string
      */
     public function get_name() {
-        return get_string('word2pdf', 'assignsubmission_word2pdf');
+        return get_string('wordimport', 'assignsubmission_wordimport');
     }
 
     /**
@@ -64,9 +57,27 @@ class assign_submission_word2pdf extends assign_submission_plugin {
      * @param int $submissionid
      * @return mixed
      */
-    private function get_word2pdf_submission($submissionid) {
+    private function get_wordimport_submission($submissionid) {
         global $DB;
-        return $DB->get_record('assignsubmission_word2pdf', array('submission' => $submissionid));
+        return $DB->get_record('assignsubmission_wordimport', array('submission' => $submissionid));
+    }
+
+    /**
+     * Get the default setting for Word file import plugin
+     * @param MoodleQuickForm $mform The form to add elements to
+     * @return void
+     */
+    public function get_settings(MoodleQuickForm $mform) {
+        global $CFG, $COURSE, $DB;
+
+        $defaultwordimportsubmissions = get_config('assignsubmission_wordimport', 'wordimportsubmissions');
+
+        // $mform->addElement('select', 'assignsubmission_wordimport',
+        //                    get_string('wordimportsubmission', 'assignsubmission_wordimport'), $options);
+        $mform->setDefault('assignsubmission_wordimport', $defaultwordimportsubmissions);
+        $mform->disabledIf('assignsubmission_wordimport', 'assignsubmission_file_enabled', 'notchecked');
+        // $mform->disabledIf('assignsubmission_wordimport', 'assignsubmission_onlinetext_enabled', 'checked');
+        // $mform->disabledIf('assignsubmission_onlinetext', 'assignsubmission_wordimport_enabled', 'checked');
     }
 
     /**
@@ -92,7 +103,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
      */
     private function count_files($submissionid, $area) {
         $fs = get_file_storage();
-        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_word2pdf',
+        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_wordimport',
                                      $area, $submissionid, "id", false);
 
         return count($files);
@@ -112,12 +123,12 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         // Make a list of Word files to convert to PDF format.
         $fileoptions = $this->get_file_options();
         file_postupdate_standard_filemanager($data, 'wordfiles', $fileoptions, $this->assignment->get_context(),
-                                             'assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT, $submission->id);
+                                             'assignsubmission_wordimport', ASSIGNSUBMISSION_WORDIMPORT_FA_DRAFT, $submission->id);
 
         // Plagiarism code event trigger when files are uploaded.
         $fs = get_file_storage();
-        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_word2pdf',
-                                     ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT, $submission->id, "id", false);
+        $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_wordimport',
+                                     ASSIGNSUBMISSION_WORDIMPORT_FA_DRAFT, $submission->id, "id", false);
 
         // Send files to event system.
         // Let Moodle know that an assessable file was uploaded (eg for plagiarism detection).
@@ -137,7 +148,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         $event->set_legacy_files($files);
         $event->trigger();
 
-        // $wordfilesubmission = $this->get_word2pdf_submission($submission->id);
+        // $wordfilesubmission = $this->get_wordimport_submission($submission->id);
         if (!$this->assignment->get_instance()->submissiondrafts) {
             // No 'submit assignment' button - need to submit immediately.
             $this->submit_for_grading($submission);
@@ -167,23 +178,23 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         $pagecount = $this->create_submission_pdf($submission);
 
         // Save the pagecount.
-        $submissionpdf = $DB->get_record('assignsubmission_word2pdf', array('assignment' => $submission->assignment,
+        $submissionpdf = $DB->get_record('assignsubmission_wordimport', array('assignment' => $submission->assignment,
                                                                       'submission' => $submission->id), 'id');
         $upd = new stdClass();
         $upd->numpages = $pagecount;
         if ($pagecount) {
-            $upd->status = ASSIGNSUBMISSION_WORD2PDF_STATUS_SUBMITTED;
+            $upd->status = ASSIGNSUBMISSION_WORDIMPORT_STATUS_SUBMITTED;
         } else {
-            $upd->status = ASSIGNSUBMISSION_WORD2PDF_STATUS_EMPTY;
+            $upd->status = ASSIGNSUBMISSION_WORDIMPORT_STATUS_EMPTY;
         }
         if ($submissionpdf) {
             $upd->id = $submissionpdf->id;
-            $DB->update_record('assignsubmission_word2pdf', $upd);
+            $DB->update_record('assignsubmission_wordimport', $upd);
         } else {
             // This should never really happen, but cope with it anyway.
             $upd->assignment = $submission->assignment;
             $upd->submission = $submission->id;
-            $upd->id = $DB->insert_record('assignsubmission_word2pdf', $upd);
+            $upd->id = $DB->insert_record('assignsubmission_wordimport', $upd);
         }
         debugging(__FUNCTION__ . "() -> void", DEBUG_WORDIMPORT);
     }
@@ -197,7 +208,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
     protected function get_temp_folder($submissionid) {
         global $CFG, $USER;
 
-        $tempfolder = $CFG->dataroot . '/temp/assignsubmission_word2pdf/';
+        $tempfolder = $CFG->dataroot . '/temp/assignsubmission_wordimport/';
         $tempfolder .= sha1("{$submissionid}_{$USER->id}_" . time());
         return $tempfolder;
     }
@@ -218,7 +229,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         if (!file_exists($temparea) || !file_exists($tempdestarea)) {
             if (!mkdir($temparea, 0777, true) || !mkdir($tempdestarea, 0777, true)) {
                 $errdata = (object)array('temparea' => $temparea, 'tempdestarea' => $tempdestarea);
-                throw new moodle_exception('errortempfolder', 'assignsubmission_word2pdf', '', null, $errdata);
+                throw new moodle_exception('errortempfolder', 'assignsubmission_wordimport', '', null, $errdata);
             }
         }
 
@@ -226,7 +237,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         $context = $this->assignment->get_context();
         $fs = get_file_storage();
         debugging(__FUNCTION__ . ":" . __LINE__ . ": context->id = $context->id", DEBUG_WORDIMPORT);
-        $files = $fs->get_area_files($context->id, 'assignsubmission_file', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT,
+        $files = $fs->get_area_files($context->id, 'assignsubmission_file', ASSIGNSUBMISSION_WORDIMPORT_FA_DRAFT,
                                      $submission->id, "sortorder, id", false);
         $combinedhtml = "";
         $combinedauthor = "";
@@ -243,9 +254,9 @@ class assign_submission_word2pdf extends assign_submission_plugin {
                     // Cannot save file.
                     throw new moodle_exception(get_string('errorcreatingfile', 'error', $file->get_filename()));
                 }
-                $htmltext = assignsubmission_word2pdf_convert_to_xhtml($tmpfilename, $context->id, $submission->id);
-                $html = assignsubmission_word2pdf_strip_images($htmltext);
-                // $bodyhtml = assignsubmission_word2pdf_get_html_body($htmltext);
+                $htmltext = assignsubmission_wordimport_convert_to_xhtml($tmpfilename, $context->id, $submission->id);
+                $html = assignsubmission_wordimport_strip_images($htmltext);
+                // $bodyhtml = assignsubmission_wordimport_get_html_body($htmltext);
                 // debugging(__FUNCTION__ . ":" . __LINE__ . ": bodyhtml = " . substr($bodyhtml, 0, 200), DEBUG_WORDIMPORT);
                 $mypdf = new pdf();
                 $mypdf->SetTitle("Word file name: " . $file->get_filename());
@@ -306,12 +317,12 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         $result = array();
         $fs = get_file_storage();
 
-        if ($submission->status == ASSIGNSUBMISSION_WORD2PDF_STATUS_SUBMITTED) {
-            $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_word2pdf',
-                                         ASSIGNSUBMISSION_WORD2PDF_FA_FINAL, $submission->id, "timemodified", false);
+        if ($submission->status == ASSIGNSUBMISSION_WORDIMPORT_STATUS_SUBMITTED) {
+            $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_wordimport',
+                                         ASSIGNSUBMISSION_WORDIMPORT_FA_FINAL, $submission->id, "timemodified", false);
         } else {
-            $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_word2pdf',
-                                         ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT, $submission->id, "timemodified", false);
+            $files = $fs->get_area_files($this->assignment->get_context()->id, 'assignsubmission_wordimport',
+                                         ASSIGNSUBMISSION_WORDIMPORT_FA_DRAFT, $submission->id, "timemodified", false);
         }
 
         foreach ($files as $file) {
@@ -331,13 +342,13 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         global $SESSION, $DB, $OUTPUT;
 
         $output = '';
-        if (isset($SESSION->assignsubmission_word2pdf_invalid)) {
+        if (isset($SESSION->assignsubmission_wordimport_invalid)) {
             $invalidfiles = '';
-            foreach ($SESSION->assignsubmission_word2pdf_invalid as $filename) {
-                $invalidfiles .= html_writer::tag('p', get_string('invalidpdf', 'assignsubmission_word2pdf', $filename));
+            foreach ($SESSION->assignsubmission_wordimport_invalid as $filename) {
+                $invalidfiles .= html_writer::tag('p', get_string('invalidpdf', 'assignsubmission_wordimport', $filename));
             }
-            $output .= html_writer::tag('div', $invalidfiles, array('class' => 'assignsubmission_word2pdf_invalid'));
-            unset($SESSION->assignsubmission_word2pdf_invalid);
+            $output .= html_writer::tag('div', $invalidfiles, array('class' => 'assignsubmission_wordimport_invalid'));
+            unset($SESSION->assignsubmission_wordimport_invalid);
         }
 
         if (!isset($submission->status)) {
@@ -356,17 +367,17 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         }
 
         if ($submission->status == ASSIGN_SUBMISSION_STATUS_DRAFT) {
-            $output .= $this->assignment->render_area_files('assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT,
+            $output .= $this->assignment->render_area_files('assignsubmission_wordimport', ASSIGNSUBMISSION_WORDIMPORT_FA_DRAFT,
                                                             $submission->id);
         } else {
             if (!$this->is_empty($submission)) {
                 $context = $this->assignment->get_context();
-                $url = moodle_url::make_pluginfile_url($context->id, 'assignsubmission_word2pdf',
-                                                       ASSIGNSUBMISSION_WORD2PDF_FA_FINAL,
+                $url = moodle_url::make_pluginfile_url($context->id, 'assignsubmission_wordimport',
+                                                       ASSIGNSUBMISSION_WORDIMPORT_FA_FINAL,
                                                        $submission->id, $this->get_subfolder(),
-                                                       ASSIGNSUBMISSION_WORD2PDF_FILENAME, true);
+                                                       ASSIGNSUBMISSION_WORDIMPORT_FILENAME, true);
                 $output .= $OUTPUT->pix_icon('t/download', '');
-                $output .= html_writer::link($url, get_string('finalsubmission', 'assignsubmission_word2pdf'));
+                $output .= html_writer::link($url, get_string('finalsubmission', 'assignsubmission_wordimport'));
             }
         }
 
@@ -380,7 +391,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
      * @return string
      */
     public function view(stdClass $submission) {
-        return $this->assignment->render_area_files('assignsubmission_word2pdf', ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT,
+        return $this->assignment->render_area_files('assignsubmission_wordimport', ASSIGNSUBMISSION_WORDIMPORT_FA_DRAFT,
                                                     $submission->id);
     }
 
@@ -394,7 +405,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
 
         // Delete all PDF submission records for this assignment.
         $params = array('assignment' => $this->assignment->get_instance()->id);
-        $DB->delete_records('assignsubmission_word2pdf', $params);
+        $DB->delete_records('assignsubmission_wordimport', $params);
 
         // All files in the module context are automatically deleted - no need to delete each area individually.
         return true;
@@ -408,7 +419,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
      */
     public function format_for_log(stdClass $submission) {
         // Format the info for each submission plugin add_to_log.
-        $filecount = $this->count_files($submission->id, ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT);
+        $filecount = $this->count_files($submission->id, ASSIGNSUBMISSION_WORDIMPORT_FA_DRAFT);
         $fileloginfo = '';
         $fileloginfo .= ' the number of file(s) : '.$filecount." file(s).<br>";
 
@@ -422,7 +433,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
      * @return bool
      */
     public function is_empty(stdClass $submission) {
-        return $this->count_files($submission->id, ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT) == 0;
+        return $this->count_files($submission->id, ASSIGNSUBMISSION_WORDIMPORT_FA_DRAFT) == 0;
     }
 
     /**
@@ -433,8 +444,8 @@ class assign_submission_word2pdf extends assign_submission_plugin {
     public function get_file_areas() {
         $name = $this->get_name();
         return array(
-            ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT => get_string('draftfor', 'assignsubmission_word2pdf', $name),
-            ASSIGNSUBMISSION_WORD2PDF_FA_FINAL => get_string('finalfor', 'assignsubmission_word2pdf', $name)
+            ASSIGNSUBMISSION_WORDIMPORT_FA_DRAFT => get_string('draftfor', 'assignsubmission_wordimport', $name),
+            ASSIGNSUBMISSION_WORDIMPORT_FA_FINAL => get_string('finalfor', 'assignsubmission_wordimport', $name)
         );
     }
 
@@ -462,8 +473,8 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         $contextid = $this->assignment->get_context()->id;
         $fs = get_file_storage();
         $files = $fs->get_area_files($contextid,
-                                     'assignsubmission_word2pdf',
-                                     ASSIGNSUBMISSION_WORD2PDF_FA_DRAFT,
+                                     'assignsubmission_wordimport',
+                                     ASSIGNSUBMISSION_WORDIMPORT_FA_DRAFT,
                                      $sourcesubmission->id,
                                      'id',
                                      false);
@@ -473,7 +484,7 @@ class assign_submission_word2pdf extends assign_submission_plugin {
         }
 
         // Copy the assignsubmission_file record.
-        if ($wordfilesubmission = $this->get_word2pdf_submission($sourcesubmission->id)) {
+        if ($wordfilesubmission = $this->get_wordimport_submission($sourcesubmission->id)) {
             unset($wordfilesubmission->id);
             $wordfilesubmission->submission = $destsubmission->id;
             $DB->insert_record('assignsubmission_file', $wordfilesubmission);

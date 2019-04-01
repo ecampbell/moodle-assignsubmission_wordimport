@@ -17,17 +17,17 @@
 /**
  * Version information
  *
- * @package    assignsubmission_word2pdf
+ * @package    assignsubmission_wordimport
  * @copyright  2019 Eoin Campbell
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2019032801;
-$plugin->release   = "0.1.8 (Build 2019032801)";
+$plugin->version   = 2019040102;
+$plugin->release   = "0.2.1 (Build 2019040102)";
 $plugin->requires  = 2016052300; // Moodle 3.1 or higher.
-$plugin->component = 'assignsubmission_word2pdf';
+$plugin->component = 'assignsubmission_wordimport';
 $plugin->maturity  = MATURITY_ALPHA;
 $plugin->cron      = 0;
 $plugin->dependencies = array('atto_wordimport' => 2018060401);

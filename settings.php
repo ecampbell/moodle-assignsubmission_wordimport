@@ -17,7 +17,7 @@
 /**
  * This file defines the admin settings for this plugin
  *
- * @package   assignsubmission_word2pdf
+ * @package   assignsubmission_wordimport
  * @copyright 2019 Eoin Campbell
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 // Note: This is on by default.
-$settings->add(new admin_setting_configcheckbox('assignsubmission_word2pdf/default',
-                    new lang_string('default', 'assignsubmission_word2pdf'),
-                    new lang_string('default_help', 'assignsubmission_word2pdf'),
+$settings->add(new admin_setting_configcheckbox('assignsubmission_wordimport/default',
+                    new lang_string('default', 'assignsubmission_wordimport'),
+                    new lang_string('default_help', 'assignsubmission_wordimport'),
                     1));

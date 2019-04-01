@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Strings for component 'assignsubmission_word2pdf', language 'en'
+ * Strings for component 'assignsubmission_wordimport', language 'en'
  *
- * @package   assignsubmission_word2pdf
+ * @package   assignsubmission_wordimport
  * @copyright 2019 Eoin Campbell
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -32,11 +32,11 @@ $string['finalfor'] = 'Final submission for {$a}';
 
 $string['default'] = 'Enabled by default';
 $string['default_help'] = 'If set, this submission method will be enabled by default for all new assignments.';
-$string['enabled'] = 'Convert Microsoft Word (.docx) files to PDF';
-$string['enabled_help'] = 'If enabled, Microsoft Word file submissions will be converted into PDF format and stored for viewing in the online grading interface.';
+$string['enabled'] = 'Convert Microsoft Word (.docx) files to HTML';
+$string['enabled_help'] = 'If enabled, Microsoft Word file submissions will be converted into HTML format and stored for viewing in the online text field.';
 $string['invalidwordfile'] = '\'{$a}\' is not a valid Microsoft Word (.docx) file';
-$string['pluginname'] = 'Microsoft Word (.docx) file to PDF conversion';
-$string['privacy:metadata'] = 'The Microsoft Word file to PDF conversion plugin for assignment submissions does not store personal data.';
-$string['word2pdf'] = 'Convert Microsoft Word (.docx) files to PDF';
+$string['pluginname'] = 'Microsoft Word (.docx) file to HTML conversion';
+$string['privacy:metadata'] = 'The Microsoft Word file to HTML conversion plugin for assignment submissions does not store personal data.';
+$string['wordimport'] = 'Convert Microsoft Word (.docx) files to HTML';
 $string['wordfilesubmissions'] = 'Word file submissions';
 
