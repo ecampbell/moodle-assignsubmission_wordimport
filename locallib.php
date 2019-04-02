@@ -63,21 +63,19 @@ class assign_submission_wordimport extends assign_submission_plugin {
     }
 
     /**
-     * Get the default setting for Word file import plugin
+     * Get the default settings for the Word file import plugin
+     *
      * @param MoodleQuickForm $mform The form to add elements to
      * @return void
      */
     public function get_settings(MoodleQuickForm $mform) {
-        global $CFG, $COURSE, $DB;
 
+        // Is it enabled by default?
         $defaultwordimportsubmissions = get_config('assignsubmission_wordimport', 'wordimportsubmissions');
-
-        // $mform->addElement('select', 'assignsubmission_wordimport',
-        //                    get_string('wordimportsubmission', 'assignsubmission_wordimport'), $options);
         $mform->setDefault('assignsubmission_wordimport', $defaultwordimportsubmissions);
-        $mform->disabledIf('assignsubmission_wordimport', 'assignsubmission_file_enabled', 'notchecked');
-        // $mform->disabledIf('assignsubmission_wordimport', 'assignsubmission_onlinetext_enabled', 'checked');
-        // $mform->disabledIf('assignsubmission_onlinetext', 'assignsubmission_wordimport_enabled', 'checked');
+        // Enabled only if both Online text AND File submissions are enabled.
+        $mform->disabledIf('assignsubmission_wordimport_enabled', 'assignsubmission_file_enabled', 'notchecked');
+        $mform->disabledIf('assignsubmission_wordimport_enabled', 'assignsubmission_onlinetext_enabled', 'notchecked');
     }
 
     /**

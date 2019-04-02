@@ -24,8 +24,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version   = 2019040102;
-$plugin->release   = "0.2.1 (Build 2019040102)";
+$plugin->version   = 2019040201;
+$plugin->release   = "0.2.2 (Build 2019040201)";
 $plugin->requires  = 2016052300; // Moodle 3.1 or higher.
 $plugin->component = 'assignsubmission_wordimport';
 $plugin->maturity  = MATURITY_ALPHA;
